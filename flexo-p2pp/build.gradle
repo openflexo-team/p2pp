@@ -1,0 +1,6 @@
+dependencies {
+  implementation flexoUtils()
+  implementation connie()
+  // for the tests only: as 'implementation' it brought JUnit to every application using this module
+  testImplementation testUtils()
+}

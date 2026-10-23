@@ -1,0 +1,3 @@
+rootProject.name = 'p2pp'
+
+include 'flexo-p2pp'
