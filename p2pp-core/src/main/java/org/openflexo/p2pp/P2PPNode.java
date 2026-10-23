@@ -2,7 +2,7 @@
  * 
  * Copyright (c) 2019, Openflexo
  * 
- * This file is part of flexo-p2pp, a component of the software infrastructure 
+ * This file is part of p2pp-core, a component of the software infrastructure 
  * developed at Openflexo.
  * 
  * 

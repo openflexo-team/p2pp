@@ -228,7 +228,7 @@ public class ChildrenContents<PN, PT, CN, CT> extends PrettyPrintableContents<PN
 				// In this case manage insertion
 				// KNOWN ISSUE: with no parsed sibling, the insertion point is the start of the parent node, i.e. AFTER its indentation.
 				// A child inserted in front of an indented node leaves that node at column 0 - see "Inserting a child in front of an
-				// indented node" in KNOWN_DEFECTS.md, at the root of flexo-p2pp.
+				// indented node" in KNOWN_DEFECTS.md, at the root of p2pp-core.
 
 				boolean handleSpecificPrelude = false;
 				boolean handleSpecificPostlude = false;

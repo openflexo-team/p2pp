@@ -1,4 +1,4 @@
-# Known defects of flexo-p2pp
+# Known defects of p2pp-core
 
 Defects of the parser-to-pretty-printer that are known, understood at least in part, and not fixed yet. Each entry says what is verified
 and what is not, points to what reproduces it, and is removed once the defect is fixed.
