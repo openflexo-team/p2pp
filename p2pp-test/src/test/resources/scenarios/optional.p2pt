@@ -1,7 +1,6 @@
 # A single child under a condition (the type of a field), and a dynamic value that becomes empty (the type of a parameter).
 
 === remove the type of a field
-known-defect: P2PP-D-7
 --- source
 unit U {
 	concept A {
@@ -18,7 +17,6 @@ unit U {
 }
 
 === give a type to an untyped field
-known-defect: P2PP-D-13
 --- source
 unit U {
 	concept A {
@@ -51,7 +49,6 @@ unit U {
 }
 
 === remove the type of a parameter in the middle
-known-defect: P2PP-D-12
 --- source
 unit U {
 	concept A {
@@ -68,7 +65,6 @@ unit U {
 }
 
 === remove the type of the only parameter
-known-defect: P2PP-D-12
 --- source
 unit U {
 	concept A {

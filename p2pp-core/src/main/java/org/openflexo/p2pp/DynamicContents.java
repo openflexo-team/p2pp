@@ -103,6 +103,10 @@ public class DynamicContents<N, T> extends PrettyPrintableContents<N, T> {
 		super.updatePrettyPrint(derivedRawSource, context);
 
 		String replacedString = stringRepresentationSupplier.get();
+		if (replacedString == null) {
+			// A null value is an empty one (it must not be written as "null")
+			replacedString = "";
+		}
 
 		RawSourceFragment fragmentToReplace = getFragment();
 

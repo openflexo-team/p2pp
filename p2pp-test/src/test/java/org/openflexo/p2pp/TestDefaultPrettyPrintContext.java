@@ -5,7 +5,6 @@ import static org.junit.Assert.assertSame;
 
 import org.junit.Test;
 import org.openflexo.p2pp.PrettyPrintContext.Indentation;
-import org.openflexo.p2pp.testing.KnownDefects;
 
 /**
  * Tests of {@link DefaultPrettyPrintContext}: indentation of a pretty-printed text.
@@ -49,10 +48,10 @@ public class TestDefaultPrettyPrintContext {
 	}
 
 	@Test
-	public void trailingLineSeparatorIsKept() {
-		KnownDefects.skipIfTolerated("P2PP-D-4");
-		// Fails when the last separator is lost: "a\n" is read as ONE row, so nothing re-emits the separator
-		assertEquals("\ta\n", indent.indent("a\n"));
+	public void trailingLineSeparatorIsDropped() {
+		// Documents current behaviour, which the nodes of FML and B rely on (they append their own separators): the final line separator
+		// of the indented text is not kept. Keeping it doubled the separators of the normalized FML (18 tests of the FML pretty-print).
+		assertEquals("\ta", indent.indent("a\n"));
 	}
 
 	@Test

@@ -15,8 +15,6 @@ import org.openflexo.p2pp.testing.ResourceFiles;
 /**
  * The sources of {@code src/test/resources/mini}, as the edit matrix uses them: those that p2pp reproduces when untouched. A source marked
  * with a known defect is left out: the corpus test already covers it, and its layout would put its own defect in every case.
- * <p>
- * As in the corpus test, the final line separator of a file is dropped (P2PP-D-5).
  */
 public final class MiniCorpus {
 
@@ -28,7 +26,7 @@ public final class MiniCorpus {
 		Map<String, String> returned = new LinkedHashMap<>();
 		for (File f : files) {
 			String text = new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
-			String source = text.endsWith("\n") ? text.substring(0, text.length() - 1) : text;
+			String source = text;
 			if (!source.startsWith("// p2pp-known-defect:")) {
 				returned.put(f.getName(), source);
 			}

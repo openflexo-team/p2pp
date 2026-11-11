@@ -29,7 +29,6 @@ unit U {
 }
 
 === remove the parent
-known-defect: P2PP-D-7
 --- source
 unit U {
 	concept A extends B {
@@ -72,7 +71,6 @@ unit U {
 }
 
 === flip both conditions at once
-known-defect: P2PP-D-7
 --- source
 unit U {
 	abstract concept A {

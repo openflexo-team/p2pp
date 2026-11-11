@@ -47,48 +47,6 @@ is indented: a top-level `VirtualModel` is not.
 the indentation of the line it is inserted on - or the insertion point should be the start of that line rather than the start of the node's
 first fragment. Either belongs here, in `ChildrenContents` or `P2PPNode.getDefaultInsertionPoint()`, rather than in each FML node.
 
-## P2PP-D-2 - A RawSource built from an empty text throws
-
-Status: TODO
-
-**Symptom.** `new RawSource(new StringReader(""))` throws `IndexOutOfBoundsException: Index -1 out of bounds for length 0`.
-
-**Verified.** The constructor computes the end position from `rows.get(rows.size() - 1)`, and `rows` is empty. Reproduced by
-`TestRawSourceEdgeCases.emptySourceIsSupported` (currently `@Ignore`d). Not checked: whether a parser can hand an empty file to p2pp.
-
-## P2PP-D-3 - `RawSourcePosition.getLengthTo()` fails towards an earlier position
-
-Status: TODO
-
-**Symptom.** `getLengthTo(other)` with `other` before the receiver throws `ArrayIndexOutOfBoundsException` (decrement before start).
-
-**Verified.** The loop decrements `current` in both branches, so when `other` is before `this` it moves away from `this` until it leaves
-the source. Forward lengths are correct. Reproduced by `TestRawSourceEdgeCases.lengthToAPositionBefore` (`@Ignore`d). No caller in the
-workspace uses it (only a commented-out line in `DerivedRawSource`), so the cheapest fix may be to remove it.
-
-## P2PP-D-4 - `DefaultPrettyPrintContext.indent()` loses a trailing line separator
-
-Status: TODO
-
-**Symptom.** With `Indentation.Indent`, `indent("a\n")` returns `"\ta"`, not `"\ta\n"`.
-
-**Verified.** The text is split with `BufferedReader.readLine()`, which gives one row for `"a\n"`, and the separator is only re-emitted
-between rows. Reproduced by `TestDefaultPrettyPrintContext.trailingLineSeparatorIsKept` (`@Ignore`d). Not checked: whether a real
-caller passes a text ending with a separator to an indenting context (`getNormalizedTextualRepresentation`, `SequentialContents`,
-`ConditionalContents`). Related, current behaviour pinned by `blankRowsInTheMiddleAreDropped`: blank rows other than the first vanish.
-
-## P2PP-D-5 - The final newline of a source is lost by the derived pretty-print
-
-Status: TODO
-
-**Symptom.** A source ending with a line separator is reproduced without it: `"unit U {\n}\n"` comes back as `"unit U {\n}"`, with no model
-change at all.
-
-**Verified.** `RawSource` reads the text with `readLine()`, so `"a\n"` and `"a"` both give ONE row and the same end position; the final
-separator is not part of any fragment, and a node covering the whole source (the compilation unit) cannot print it. Reproduced by
-`TestMiniNormalizedPrettyPrint.untouchedSourceKeepsItsFinalNewline` (`@Ignore`d). Not checked: whether FML and B writers add the
-separator themselves when saving.
-
 ## P2PP-D-6 - A source whose layout is not the canonical one is reformatted without any model change
 
 Status: TODO
@@ -107,18 +65,6 @@ indentation, blank rows and comments, IS reproduced exactly (tests of the same c
 **Open question for the owner.** Is "no change, same text" meant to hold for any layout, or only for the layout the nodes declare? If
 the former, the fix belongs in p2pp-core (a whitespace-only separator already materialized in the source counts as found), and the B
 override can go.
-
-## P2PP-D-7 - Removing a conditional contents leaves a stray separator
-
-Status: TODO
-
-**Symptom.** Removing `extends B` from `concept A extends B {` gives `concept A  {` (two spaces). Same on the other end: `abstract concept C  {`
-after the `abstract` condition goes false on a concept whose parent is removed too.
-
-**Verified in the code.** `PrettyPrintableContents.getExtendedFragment()` (and `getExtendedFragmentNoRecomputation()`) builds the fragment
-with its prelude, then overwrites it with `getFragment().union(getPostludeFragment())` instead of `returned.union(...)`: when a contents
-has both a prelude and a postlude, the prelude is dropped from the fragment `ConditionalContents` removes. Reproduced by the scenarios
-`remove the parent` and `flip both conditions at once` of `conditional.p2pt`, `remove the type of a field` of `optional.p2pt`, and by the group `set-parent/-` of the edit matrix.
 
 ## P2PP-D-8 - A child added before the first parsed sibling is inserted after the last one
 
@@ -165,47 +111,3 @@ does not parse back to it. Same for parameters and concepts (groups `move-*/*` o
 
 **Mechanism - read in the code.** `ChildrenContents.updatePrettyPrint()` replaces each parsed child by its own text, in place (`Case 5`):
 nothing compares the order of the model with the order of the parsed nodes. Reproduced by `move.p2pt`.
-
-## P2PP-D-11 - Removing the first or the last item of a list leaves its separator when the matching `...ForFirstItem` / `...ForLastItem` is empty
-
-Status: TODO
-
-**Symptom.** Two mirror cases, both leaving a separator that no item uses any more:
-
-- Removing `a` from `m(a : int, b : string, c : bool)` gives `m(, b : string, c : bool)` (Mini). The separator `", "` is the prelude of the
-  items after the first; the first item declares `""` as `preludeForFirstItem`.
-- Removing the last set of `SETS GGG; Hhh; kkk = {LLL}` gives `SETS GGG; Hhh; ` followed by `END`, which does not parse (B). The separator
-  `";"` is the postlude of each item; the last one declares `""` as `postludeForLastItem`.
-
-**Mechanism - read in the code.** In the removal, `wasFirst` tests `StringUtils.isNotEmpty(preludeForFirstItem)` to decide to remove the
-prelude of the new first node, and `wasLast` tests `StringUtils.isNotEmpty(postludeForLastItem)` to decide to remove the postlude of the new
-last node; the insertion and the normalized pretty-print test `!= null`. With `""` the separator is left. Reproduced by
-`remove the first parameter` (`remove.p2pt`) and the group `remove-param/first` of the Mini edit matrix, and, on the B component of
-`formod/b-ta-test`, by the groups `remove-set/last`, `remove-constant/last` and `remove-variable/last` of `TestBEditMatrix`.
-
-## P2PP-D-12 - A dynamic contents whose value is null writes "null" in the derived pretty-print
-
-Status: TODO
-
-**Symptom.** A `DynamicContents` whose supplier returns `null` (a parameter without type, a name not set) is written as the text `null`
-when the node has been parsed: the untouched source `method m(a, b : int)` comes back as `method m(anull, b : int)`, which is another
-model. The normalized pretty-print is right (it treats `null` as empty).
-
-**Mechanism - read in the code.** `DynamicContents.updatePrettyPrint()` tests `StringUtils.isNotEmpty(replacedString)` to add the prelude and
-postlude, but then passes `replacedString` itself, `null`, to `DerivedRawSource.replace()`, whose `StringReplacement` appends it with
-`StringBuffer.append((String) null)`: `"null"`. An empty string is fine. Reproduced by the corpus file `optional-params.mini`, the scenarios
-`remove the type of a parameter in the middle` and `remove the type of the only parameter` (`optional.p2pt`), and the group `set-type/-` of the
-edit matrix. Open question for the owner: is a `null` supplier a legitimate answer (then it must mean "empty"), or must suppliers return
-`""`?
-
-## P2PP-D-13 - A child added where there was none is inserted at the end of the node
-
-Status: TODO
-
-**Symptom.** Giving a type to a field that had none, `field x;` -> `field x : int;`, gives `field x : ;int`: the `:` is written at its place and
-the type after the `;`. Same for `replace type` on an untyped field.
-
-**Mechanism - read in the code.** `ChildContents.updatePrettyPrint()` inserts a child that was not parsed at
-`getParentNode().getDefaultInsertionPoint()`, the end of the last contents of the node that has a parsed fragment (here the `;`), and not at the
-insertion point of the contents themselves (`getInsertionPoint()`, which follows the previous contents, as `StaticContents` does for the `:`).
-Reproduced by `give a type to an untyped field` (`optional.p2pt`) and the groups `set-type/-` and `replace-type/-` of the edit matrix.

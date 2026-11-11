@@ -206,7 +206,6 @@ public class TestMiniNormalizedPrettyPrint {
 
 	@Test
 	public void untouchedSourceKeepsItsFinalNewline() throws MiniParseException {
-		KnownDefects.skipIfTolerated("P2PP-D-5");
 		assertUntouched("unit U {\n}\n");
 	}
 }

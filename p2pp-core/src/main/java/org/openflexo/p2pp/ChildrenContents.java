@@ -328,10 +328,14 @@ public class ChildrenContents<PN, PT, CN, CT> extends PrettyPrintableContents<PN
 				derivedRawSource.remove(startPosition.getOuterType().makeFragment(startPosition, endPosition));
 			}
 			else if (wasFirst) {
-				if (StringUtils.isNotEmpty(preludeForFirstItem) && childrenObjectsList.size() > 0) {
+				// The first item has a prelude of its own, other than the one of the others (even an empty one: "" for "(a, b)"): the item
+				// that becomes the first one takes it, so the prelude it had as a following item goes
+				if (preludeForFirstItem != null && !preludeForFirstItem.equals(getPrelude()) && childrenObjectsList.size() > 0) {
 					derivedRawSource.remove(startPosition.getOuterType().makeFragment(startPosition, endPosition));
 					P2PPNode<?, CT> newFirstNode = getParentNode().getObjectNode(childrenObjectsList.get(0));
-					derivedRawSource.remove(newFirstNode.getPrelude());
+					if (newFirstNode.getPrelude() != null) {
+						derivedRawSource.remove(newFirstNode.getPrelude());
+					}
 				}
 				else {
 					if (removedNode.getPrelude() != null) {
@@ -344,10 +348,13 @@ public class ChildrenContents<PN, PT, CN, CT> extends PrettyPrintableContents<PN
 				}
 			}
 			else if (wasLast) {
-				if (StringUtils.isNotEmpty(postludeForLastItem) && childrenObjectsList.size() > 0) {
+				// Same for the last item, whose postlude is not the one of the others ("" for "a; b; c")
+				if (postludeForLastItem != null && !postludeForLastItem.equals(getPostlude()) && childrenObjectsList.size() > 0) {
 					derivedRawSource.remove(startPosition.getOuterType().makeFragment(startPosition, endPosition));
 					P2PPNode<?, CT> newLastNode = getParentNode().getObjectNode(childrenObjectsList.get(childrenObjectsList.size() - 1));
-					derivedRawSource.remove(newLastNode.getPostlude());
+					if (newLastNode.getPostlude() != null) {
+						derivedRawSource.remove(newLastNode.getPostlude());
+					}
 				}
 				else {
 					if (removedNode.getPrelude() != null) {

@@ -182,7 +182,6 @@ unit U {
 }
 
 === remove the first parameter
-known-defect: P2PP-D-11
 --- source
 unit U {
 	concept A {

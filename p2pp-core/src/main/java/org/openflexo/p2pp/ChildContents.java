@@ -164,7 +164,7 @@ public class ChildContents<PN, PT, CN, CT> extends PrettyPrintableContents<PN, P
 			else {
 				// System.out.println("****** Inserting at " + parentNode.getDefaultInsertionPoint() + " contents: "
 				// + childNode.getTextualRepresentation(derivedContext));
-				derivedRawSource.insert(getParentNode().getDefaultInsertionPoint(), childNode.getTextualRepresentation(derivedContext));
+				derivedRawSource.insert(getInsertionPoint(), childNode.getTextualRepresentation(derivedContext));
 			}
 			currentChildNode = childNode;
 		}

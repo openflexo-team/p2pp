@@ -35,8 +35,6 @@ import org.openflexo.p2pp.testing.UntouchedChecks;
  * </ul>
  * A file whose first row is {@code // p2pp-known-defect: P2PP-D-n} is a source that p2pp does not reproduce yet (see
  * {@code KNOWN_DEFECTS.md}): the test then expects the difference, so that it fails, asking to remove the row, when the defect is fixed.
- * <p>
- * The final line separator of a file is dropped before parsing: p2pp cannot reproduce it (P2PP-D-5, which has its own test).
  */
 @RunWith(Parameterized.class)
 public class TestMiniCorpus {
@@ -61,7 +59,7 @@ public class TestMiniCorpus {
 	public TestMiniCorpus(String name, File file) throws IOException {
 		this.name = name;
 		String text = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
-		this.source = text.endsWith("\n") ? text.substring(0, text.length() - 1) : text;
+		this.source = text;
 		Matcher m = KNOWN_DEFECT.matcher(source);
 		this.knownDefect = m.find() ? m.group(1) : null;
 	}

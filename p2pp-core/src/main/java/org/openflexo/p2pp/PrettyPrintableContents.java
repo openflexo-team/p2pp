@@ -340,7 +340,7 @@ public abstract class PrettyPrintableContents<N, T> {
 		}
 		if (StringUtils.isNotEmpty(getPostlude()) && getPostludeFragment() != null) {
 			// Include postlude when required
-			returned = getFragment().union(getPostludeFragment());
+			returned = returned.union(getPostludeFragment());
 		}
 		return returned;
 	}
@@ -358,7 +358,7 @@ public abstract class PrettyPrintableContents<N, T> {
 		}
 		if (StringUtils.isNotEmpty(getPostlude()) && postludeFragment != null) {
 			// Include postlude when required
-			returned = getFragment().union(postludeFragment);
+			returned = returned.union(postludeFragment);
 		}
 		return returned;
 	}

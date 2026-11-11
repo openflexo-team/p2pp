@@ -78,8 +78,7 @@ the parsed text, which is why a source in another layout is reformatted (P2PP-D-
 ## Conventions of the sample sources
 
 A file whose first row is `// p2pp-known-defect: P2PP-D-n` is a source that p2pp does not reproduce yet: `TestMiniCorpus` then fails like
-any other test (see below for the tolerant run). The final line separator of a file is dropped before
-parsing (P2PP-D-5).
+any other test (see below for the tolerant run).
 
 ## Scenarios (`src/test/resources/scenarios/*.p2pt`)
 
@@ -164,7 +163,7 @@ is gone, asking to remove the mark). Each of them is recorded, and the end of th
 
 ```
 Known p2pp defects waited for by this run (p2pp-core/KNOWN_DEFECTS.md): 10 defects, 31 defect/test pairs
-  P2PP-D-2   1 test(s)
+  P2PP-D-6   1 test(s)
   ...
 ```
 
@@ -195,4 +194,4 @@ Not done yet, to consume this module from another repository: a helper `p2ppTest
 
 `formod/b-ta-test` runs the harness on B (the test classes `TestBPrettyPrintInvariants` and `TestBEditMatrix`, the target `BTarget`, the edit
 language `BEdits` and its generator `BEditGenerator`). Its known-defect table is `b-matrix-known-defects.txt`. It found no defect of its
-own so far: the groups that fail are the ones P2PP-D-8, D-10 and D-11 already explain, here with the visible separators of B (`;` and `,`).
+own so far: the groups that fail are the ones P2PP-D-8 and D-10 already explain, here with the visible separators of B (`;` and `,`).

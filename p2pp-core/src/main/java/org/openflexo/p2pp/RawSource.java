@@ -44,6 +44,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -201,23 +202,11 @@ public class RawSource {
 			return compareTo(other) >= 0;
 		}
 
+		/**
+		 * Number of characters from this position to the other one: positive when the other one is after, negative when it is before
+		 */
 		public int getLengthTo(RawSourcePosition other) {
-			// System.out.println("getLengthTo from " + this + " to " + other);
-			int returned = 0;
-			RawSourcePosition current = other;
-			while (compareTo(current) != 0) {
-				if (isBefore(current)) {
-					current = current.decrement();
-					returned++;
-				}
-				if (isAfter(current)) {
-					current = current.decrement();
-					returned--;
-				}
-				// System.out.println("current=" + current);
-			}
-			// System.out.println("return " + returned);
-			return returned;
+			return other.getOffset() - getOffset();
 		}
 
 		@Override
@@ -490,17 +479,21 @@ public class RawSource {
 	}
 
 	public RawSource(Reader reader) throws IOException {
-		rawText = new StringBuffer();
-		rows = new ArrayList<>();
+		StringBuilder text = new StringBuilder();
 		try (BufferedReader br = new BufferedReader(reader)) {
-			String nextLine = null;
-			do {
-				nextLine = br.readLine();
-				if (nextLine != null) {
-					rows.add(nextLine);
-					rawText.append(nextLine + StringUtils.LINE_SEPARATOR);
-				}
-			} while (nextLine != null);
+			char[] buffer = new char[8192];
+			int n;
+			while ((n = br.read(buffer)) >= 0) {
+				text.append(buffer, 0, n);
+			}
+		}
+		// Line separators (\n, \r\n, \r) end a row. A text ending with one has a last row that is empty, so that the final separator is part
+		// of the source (and of the fragment covering it); an empty text is one empty row, not no row at all.
+		rows = new ArrayList<>(Arrays.asList(text.toString().split("\r\n|\r|\n", -1)));
+		boolean lastRowIsAfterFinalSeparator = rows.size() > 1 || text.length() == 0;
+		rawText = new StringBuffer();
+		for (int i = 0; i < rows.size() - (lastRowIsAfterFinalSeparator ? 1 : 0); i++) {
+			rawText.append(rows.get(i) + StringUtils.LINE_SEPARATOR);
 		}
 		startPosition = new RawSourcePosition(1, 0);
 		endPosition = new RawSourcePosition(rows.size(), rows.get(rows.size() - 1).length());

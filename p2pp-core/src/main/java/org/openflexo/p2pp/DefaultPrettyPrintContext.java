@@ -92,6 +92,10 @@ public class DefaultPrettyPrintContext implements PrettyPrintContext {
 		return resultingIndentation;
 	}
 
+	/**
+	 * Indent every non-blank row. Blank rows are dropped (except a first one) and so is a final line separator: the contents that call
+	 * this method append the separators they need, and rely on it (the pretty-printers of FML and B).
+	 */
 	@Override
 	public String indent(String stringToIndent) {
 

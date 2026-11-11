@@ -13,7 +13,6 @@ import java.io.StringReader;
 import org.junit.Test;
 import org.openflexo.p2pp.RawSource.RawSourceFragment;
 import org.openflexo.p2pp.RawSource.RawSourcePosition;
-import org.openflexo.p2pp.testing.KnownDefects;
 
 /**
  * Edge cases of {@link RawSource}: source shapes (no trailing newline, blank lines, CRLF), positions, fragments, offsets.
@@ -36,10 +35,12 @@ public class TestRawSourceEdgeCases {
 	}
 
 	@Test
-	public void trailingNewlineDoesNotAddARow() throws IOException {
+	public void finalNewlineEndsAnEmptyLastRow() throws IOException {
+		// The final line separator is part of the source: it ends the second row, and the (empty) third one starts after it
 		RawSource s = source("a\nb\n");
-		assertEquals(2, s.size());
-		assertEquals("(2:1)", s.getEndPosition().toString());
+		assertEquals(3, s.size());
+		assertEquals("(3:0)", s.getEndPosition().toString());
+		assertEquals("a\nb\n", s.makeFragment(s.getStartPosition(), s.getEndPosition()).getRawText());
 	}
 
 	@Test
@@ -60,7 +61,6 @@ public class TestRawSourceEdgeCases {
 
 	@Test
 	public void emptySourceIsSupported() throws IOException {
-		KnownDefects.skipIfTolerated("P2PP-D-2");
 		// Suspected defect: endPosition is computed from rows.get(rows.size() - 1) on an empty list
 		RawSource s = source("");
 		assertEquals(s.getStartPosition(), s.getEndPosition());
@@ -166,7 +166,6 @@ public class TestRawSourceEdgeCases {
 
 	@Test
 	public void lengthToAPositionBefore() throws IOException {
-		KnownDefects.skipIfTolerated("P2PP-D-3");
 		RawSource s = source("abc\ndef");
 		// Loops by moving away from the target until it falls out of the source
 		assertEquals(2, Math.abs(s.getStartPosition().increment(5).getLengthTo(s.getStartPosition().increment(3))));
