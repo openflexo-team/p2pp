@@ -7,7 +7,6 @@ import static org.openflexo.p2pp.mini.MiniModel.method;
 import static org.openflexo.p2pp.mini.MiniModel.param;
 import static org.openflexo.p2pp.mini.MiniModel.unit;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.openflexo.p2pp.mini.MiniDocument;
 import org.openflexo.p2pp.mini.MiniModel.Concept;
@@ -198,15 +197,15 @@ public class TestMiniNormalizedPrettyPrint {
 		assertUntouched("// header\nunit U {\n  concept A {\n    field x : int;\n\n    /* the method */\n    method m(a : int);\n  }\n}");
 	}
 
-	@Ignore("P2PP-D-6")
 	@Test
 	public void untouchedSourceWithFreeLayoutIsReproduced() throws MiniParseException {
+		KnownDefects.skipIfTolerated("P2PP-D-6");
 		assertUntouched("unit U{abstract   concept A extends B{ field x:int; // x\n method m( a:int ,b : string ) ; }\n\n\n  concept C{}}");
 	}
 
-	@Ignore("P2PP-D-5")
 	@Test
 	public void untouchedSourceKeepsItsFinalNewline() throws MiniParseException {
+		KnownDefects.skipIfTolerated("P2PP-D-5");
 		assertUntouched("unit U {\n}\n");
 	}
 }

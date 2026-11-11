@@ -3,7 +3,6 @@ package org.openflexo.p2pp;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.openflexo.p2pp.PrettyPrintContext.Indentation;
 
@@ -48,9 +47,9 @@ public class TestDefaultPrettyPrintContext {
 		assertEquals("\ta\n\tb", indent.indent("a\n\nb"));
 	}
 
-	@Ignore("P2PP-D-4")
 	@Test
 	public void trailingLineSeparatorIsKept() {
+		KnownDefects.skipIfTolerated("P2PP-D-4");
 		// Fails when the last separator is lost: "a\n" is read as ONE row, so nothing re-emits the separator
 		assertEquals("\ta\n", indent.indent("a\n"));
 	}

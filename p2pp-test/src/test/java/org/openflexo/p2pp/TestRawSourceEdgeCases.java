@@ -10,7 +10,6 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.io.StringReader;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.openflexo.p2pp.RawSource.RawSourceFragment;
 import org.openflexo.p2pp.RawSource.RawSourcePosition;
@@ -58,9 +57,9 @@ public class TestRawSourceEdgeCases {
 		assertEquals("a\nb", s.makeFragment(s.getStartPosition(), s.getEndPosition()).getRawText());
 	}
 
-	@Ignore("P2PP-D-2")
 	@Test
 	public void emptySourceIsSupported() throws IOException {
+		KnownDefects.skipIfTolerated("P2PP-D-2");
 		// Suspected defect: endPosition is computed from rows.get(rows.size() - 1) on an empty list
 		RawSource s = source("");
 		assertEquals(s.getStartPosition(), s.getEndPosition());
@@ -164,9 +163,9 @@ public class TestRawSourceEdgeCases {
 		assertEquals(5, start.getLengthTo(start.increment(5)));
 	}
 
-	@Ignore("P2PP-D-3")
 	@Test
 	public void lengthToAPositionBefore() throws IOException {
+		KnownDefects.skipIfTolerated("P2PP-D-3");
 		RawSource s = source("abc\ndef");
 		// Loops by moving away from the target until it falls out of the source
 		assertEquals(2, Math.abs(s.getStartPosition().increment(5).getLengthTo(s.getStartPosition().increment(3))));

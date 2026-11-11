@@ -52,8 +52,10 @@ public class TestMiniCorpus {
 
 	private final String source;
 	private final String knownDefect;
+	private final String name;
 
 	public TestMiniCorpus(String name, File file) throws IOException {
+		this.name = name;
 		String text = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
 		this.source = text.endsWith("\n") ? text.substring(0, text.length() - 1) : text;
 		Matcher m = KNOWN_DEFECT.matcher(source);
@@ -83,11 +85,12 @@ public class TestMiniCorpus {
 	@Test
 	public void derivedPrettyPrintOfAnUntouchedSourceIsTheSource() throws MiniParseException {
 		String derived = MiniDocument.parse(source).derived();
-		if (knownDefect == null) {
+		if (knownDefect == null || !KnownDefects.areTolerated()) {
 			assertEquals(source, derived);
 		}
 		else {
 			assertNotEquals(knownDefect + " seems fixed: remove the known-defect row of this file", source, derived);
+			KnownDefects.register(knownDefect, "TestMiniCorpus." + name);
 		}
 	}
 

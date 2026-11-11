@@ -1,0 +1,128 @@
+# Conditional contents: 'abstract' (one contents) and 'extends P' (a sequence of two contents).
+
+=== remove abstract
+--- source
+unit U {
+	abstract concept A {
+	}
+}
+--- edit
+set abstract A false
+--- expect
+unit U {
+	concept A {
+	}
+}
+
+=== add abstract
+--- source
+unit U {
+	concept A {
+	}
+}
+--- edit
+set abstract A true
+--- expect
+unit U {
+	abstract concept A {
+	}
+}
+
+=== remove the parent
+known-defect: P2PP-D-7
+--- source
+unit U {
+	concept A extends B {
+	}
+}
+--- edit
+set parent A none
+--- expect
+unit U {
+	concept A {
+	}
+}
+
+=== add a parent
+--- source
+unit U {
+	concept A {
+	}
+}
+--- edit
+set parent A B
+--- expect
+unit U {
+	concept A extends B {
+	}
+}
+
+=== change the parent
+--- source
+unit U {
+	concept A extends B {
+	}
+}
+--- edit
+set parent A D
+--- expect
+unit U {
+	concept A extends D {
+	}
+}
+
+=== flip both conditions at once
+known-defect: P2PP-D-7
+--- source
+unit U {
+	abstract concept A {
+	}
+	concept C extends B {
+	}
+}
+--- edit
+set abstract A false
+set parent A B
+set abstract C true
+set parent C none
+--- expect
+unit U {
+	concept A extends B {
+	}
+	abstract concept C {
+	}
+}
+
+=== flip a condition and flip it back
+--- source
+unit U {
+	abstract concept A extends B {
+	}
+}
+--- edit
+set abstract A false
+set abstract A true
+set parent A none
+set parent A B
+--- expect
+unit U {
+	abstract concept A extends B {
+	}
+}
+
+=== flip a condition of a concept that has members
+--- source
+unit U {
+	abstract concept A {
+		field x : int;
+	}
+}
+--- edit
+set abstract A false
+set parent A B
+--- expect
+unit U {
+	concept A extends B {
+		field x : int;
+	}
+}

@@ -1,0 +1,340 @@
+# Children contents: objects added to the model. The new text is the normalized pretty-print of the new object, indented like its siblings.
+
+=== add a concept at the end of a unit
+--- source
+unit U {
+	concept A {
+	}
+}
+--- edit
+add concept B
+--- expect
+unit U {
+	concept A {
+	}
+	concept B {
+	}
+}
+
+=== add an abstract concept with a parent at the end
+--- source
+unit U {
+	concept A {
+	}
+}
+--- edit
+add concept B abstract extends A
+--- expect
+unit U {
+	concept A {
+	}
+	abstract concept B extends A {
+	}
+}
+
+=== add a concept in an empty unit
+--- source
+unit U {
+}
+--- edit
+add concept A
+--- expect
+unit U {
+	concept A {
+	}
+}
+
+=== add a concept at the start of a unit
+known-defect: P2PP-D-8
+--- source
+unit U {
+	concept A {
+	}
+	concept B {
+	}
+}
+--- edit
+add concept Z at 0
+--- expect
+unit U {
+	concept Z {
+	}
+	concept A {
+	}
+	concept B {
+	}
+}
+
+=== add a concept in the middle of a unit
+--- source
+unit U {
+	concept A {
+	}
+	concept B {
+	}
+}
+--- edit
+add concept Z at 1
+--- expect
+unit U {
+	concept A {
+	}
+	concept Z {
+	}
+	concept B {
+	}
+}
+
+=== add several concepts
+--- source
+unit U {
+	concept A {
+	}
+}
+--- edit
+add concept B
+add concept C
+add concept D
+--- expect
+unit U {
+	concept A {
+	}
+	concept B {
+	}
+	concept C {
+	}
+	concept D {
+	}
+}
+
+=== add a field at the end of the members
+known-defect: P2PP-D-9
+--- source
+unit U {
+	concept A {
+		field x : int;
+	}
+}
+--- edit
+add field A y : string
+--- expect
+unit U {
+	concept A {
+		field x : int;
+		field y : string;
+	}
+}
+
+=== add a field in an empty concept
+known-defect: P2PP-D-9
+--- source
+unit U {
+	concept A {
+	}
+}
+--- edit
+add field A x : int
+--- expect
+unit U {
+	concept A {
+		field x : int;
+	}
+}
+
+=== add a field at the start of the members
+known-defect: P2PP-D-8, P2PP-D-9
+--- source
+unit U {
+	concept A {
+		field x : int;
+		field y : int;
+	}
+}
+--- edit
+add field A w : int at 0
+--- expect
+unit U {
+	concept A {
+		field w : int;
+		field x : int;
+		field y : int;
+	}
+}
+
+=== add a field in the middle of the members
+known-defect: P2PP-D-9
+--- source
+unit U {
+	concept A {
+		field x : int;
+		field y : int;
+	}
+}
+--- edit
+add field A w : int at 1
+--- expect
+unit U {
+	concept A {
+		field x : int;
+		field w : int;
+		field y : int;
+	}
+}
+
+=== add a method without parameter, with one, with two
+known-defect: P2PP-D-9
+--- source
+unit U {
+	concept A {
+	}
+}
+--- edit
+add method A none()
+add method A one(a : int)
+add method A two(a : int, b : string)
+--- expect
+unit U {
+	concept A {
+		method none();
+		method one(a : int);
+		method two(a : int, b : string);
+	}
+}
+
+=== add a member in a concept inside a commented source
+known-defect: P2PP-D-9
+--- source
+// header
+unit U {
+	concept A {
+		field x : int; // x
+	}
+	// the last one
+	concept B {
+	}
+}
+// trailer
+--- edit
+add field A y : int
+--- expect
+// header
+unit U {
+	concept A {
+		field x : int; // x
+		field y : int;
+	}
+	// the last one
+	concept B {
+	}
+}
+// trailer
+
+=== add a parameter to a method without parameter
+--- source
+unit U {
+	concept A {
+		method m();
+	}
+}
+--- edit
+add param A.m a : int
+--- expect
+unit U {
+	concept A {
+		method m(a : int);
+	}
+}
+
+=== add a parameter at the end of a method
+--- source
+unit U {
+	concept A {
+		method m(a : int);
+	}
+}
+--- edit
+add param A.m b : string
+--- expect
+unit U {
+	concept A {
+		method m(a : int, b : string);
+	}
+}
+
+=== add a parameter at the start of a method
+known-defect: P2PP-D-8
+--- source
+unit U {
+	concept A {
+		method m(a : int, b : string);
+	}
+}
+--- edit
+add param A.m z : bool at 0
+--- expect
+unit U {
+	concept A {
+		method m(z : bool, a : int, b : string);
+	}
+}
+
+=== add a parameter in the middle of a method
+--- source
+unit U {
+	concept A {
+		method m(a : int, c : string);
+	}
+}
+--- edit
+add param A.m b : bool at 1
+--- expect
+unit U {
+	concept A {
+		method m(a : int, b : bool, c : string);
+	}
+}
+
+=== add a parameter to the method of another concept than the last
+--- source
+unit U {
+	concept A {
+		method m(a : int);
+	}
+	concept B {
+		method n(a : int);
+	}
+}
+--- edit
+add param A.m b : int
+add param B.n b : int
+--- expect
+unit U {
+	concept A {
+		method m(a : int, b : int);
+	}
+	concept B {
+		method n(a : int, b : int);
+	}
+}
+
+=== add an object and rename another in the same pretty-print
+known-defect: P2PP-D-9
+--- source
+unit U {
+	concept A {
+		field x : int;
+	}
+}
+--- edit
+add field A y : int
+rename A.x to w
+add concept B
+--- expect
+unit U {
+	concept A {
+		field w : int;
+		field y : int;
+	}
+	concept B {
+	}
+}

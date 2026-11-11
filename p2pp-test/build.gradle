@@ -6,3 +6,33 @@ dependencies {
   testImplementation connie()
   testImplementation testUtils()
 }
+
+// Known defects of p2pp-core (see KnownDefects in the tests): the tests that show one FAIL, to be fixed. With
+// './gradlew :p2pp-test:test -Dp2pp.tolerateKnownDefects=true' they wait for the fix instead; the test JVM records them in a file, and the
+// summary below says which defects the run waits for.
+def knownDefectsFile = layout.buildDirectory.file('known-defects.txt')
+
+tasks.withType(Test).configureEach {
+  systemProperty 'p2pp.tolerateKnownDefects', System.getProperty('p2pp.tolerateKnownDefects', 'false')
+  systemProperty 'p2pp.knownDefectsFile', knownDefectsFile.get().asFile.path
+  doFirst {
+    knownDefectsFile.get().asFile.delete()
+  }
+  doLast {
+    def report = knownDefectsFile.get().asFile
+    if (report.exists()) {
+      def byDefect = new TreeMap({ a, b -> (a.replaceAll('\\D', '') as int) <=> (b.replaceAll('\\D', '') as int) } as Comparator)
+      report.eachLine { row ->
+        def parts = row.split('\t')
+        if (parts.length == 2) {
+          byDefect.computeIfAbsent(parts[0]) { new TreeSet() }.add(parts[1])
+        }
+      }
+      def total = byDefect.values().sum { it.size() }
+      println ''
+      println "Known p2pp defects waited for by this run (p2pp-core/KNOWN_DEFECTS.md): ${byDefect.size()} defects, ${total} defect/test pairs"
+      byDefect.each { id, tests -> println "  ${id.padRight(10)} ${tests.size()} test(s)" }
+      println '  (-Dp2pp.tolerateKnownDefects=true is set: without it these tests fail)'
+    }
+  }
+}

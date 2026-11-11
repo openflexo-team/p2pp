@@ -1,0 +1,269 @@
+# Children contents: objects removed from the model. The text of the object goes, with its separators.
+
+=== remove the only concept of a unit
+--- source
+unit U {
+	concept A {
+	}
+}
+--- edit
+remove A
+--- expect
+unit U {
+}
+
+=== remove the first concept
+--- source
+unit U {
+	concept A {
+	}
+	concept B {
+	}
+	concept C {
+	}
+}
+--- edit
+remove A
+--- expect
+unit U {
+	concept B {
+	}
+	concept C {
+	}
+}
+
+=== remove a concept in the middle
+--- source
+unit U {
+	concept A {
+	}
+	concept B {
+	}
+	concept C {
+	}
+}
+--- edit
+remove B
+--- expect
+unit U {
+	concept A {
+	}
+	concept C {
+	}
+}
+
+=== remove the last concept
+--- source
+unit U {
+	concept A {
+	}
+	concept B {
+	}
+	concept C {
+	}
+}
+--- edit
+remove C
+--- expect
+unit U {
+	concept A {
+	}
+	concept B {
+	}
+}
+
+=== remove all the concepts
+--- source
+unit U {
+	concept A {
+	}
+	concept B {
+	}
+}
+--- edit
+remove A
+remove B
+--- expect
+unit U {
+}
+
+=== remove the first member
+known-defect: P2PP-D-9
+--- source
+unit U {
+	concept A {
+		field x : int;
+		field y : int;
+		field z : int;
+	}
+}
+--- edit
+remove A.x
+--- expect
+unit U {
+	concept A {
+		field y : int;
+		field z : int;
+	}
+}
+
+=== remove a member in the middle
+known-defect: P2PP-D-9
+--- source
+unit U {
+	concept A {
+		field x : int;
+		field y : int;
+		field z : int;
+	}
+}
+--- edit
+remove A.y
+--- expect
+unit U {
+	concept A {
+		field x : int;
+		field z : int;
+	}
+}
+
+=== remove the last member
+known-defect: P2PP-D-9
+--- source
+unit U {
+	concept A {
+		field x : int;
+		field y : int;
+		field z : int;
+	}
+}
+--- edit
+remove A.z
+--- expect
+unit U {
+	concept A {
+		field x : int;
+		field y : int;
+	}
+}
+
+=== remove the only member
+known-defect: P2PP-D-9
+--- source
+unit U {
+	concept A {
+		field x : int;
+	}
+}
+--- edit
+remove A.x
+--- expect
+unit U {
+	concept A {
+	}
+}
+
+=== remove a method with its parameters
+known-defect: P2PP-D-9
+--- source
+unit U {
+	concept A {
+		field x : int;
+		method m(a : int, b : string);
+	}
+}
+--- edit
+remove A.m
+--- expect
+unit U {
+	concept A {
+		field x : int;
+	}
+}
+
+=== remove the first parameter
+known-defect: P2PP-D-11
+--- source
+unit U {
+	concept A {
+		method m(a : int, b : string, c : bool);
+	}
+}
+--- edit
+remove A.m.a
+--- expect
+unit U {
+	concept A {
+		method m(b : string, c : bool);
+	}
+}
+
+=== remove a parameter in the middle
+--- source
+unit U {
+	concept A {
+		method m(a : int, b : string, c : bool);
+	}
+}
+--- edit
+remove A.m.b
+--- expect
+unit U {
+	concept A {
+		method m(a : int, c : bool);
+	}
+}
+
+=== remove the last parameter
+--- source
+unit U {
+	concept A {
+		method m(a : int, b : string, c : bool);
+	}
+}
+--- edit
+remove A.m.c
+--- expect
+unit U {
+	concept A {
+		method m(a : int, b : string);
+	}
+}
+
+=== remove the only parameter
+--- source
+unit U {
+	concept A {
+		method m(a : int);
+	}
+}
+--- edit
+remove A.m.a
+--- expect
+unit U {
+	concept A {
+		method m();
+	}
+}
+
+=== remove a member: its same-row comment goes with it, the comment on its own row stays
+known-defect: P2PP-D-9
+--- source
+unit U {
+	concept A {
+		field x : int;
+		// about y
+		field y : int; // y
+		field z : int;
+	}
+}
+--- edit
+remove A.y
+--- expect
+unit U {
+	concept A {
+		field x : int;
+		// about y
+		field z : int;
+	}
+}

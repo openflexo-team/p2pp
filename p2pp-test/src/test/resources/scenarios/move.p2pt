@@ -1,0 +1,79 @@
+# Reordering: the model changes the order of its children.
+
+=== move a member to the start
+known-defect: P2PP-D-10
+--- source
+unit U {
+	concept A {
+		field x : int;
+		field y : int;
+		field z : int;
+	}
+}
+--- edit
+move A.z to 0
+--- expect
+unit U {
+	concept A {
+		field z : int;
+		field x : int;
+		field y : int;
+	}
+}
+
+=== move a member to the end
+known-defect: P2PP-D-10
+--- source
+unit U {
+	concept A {
+		field x : int;
+		field y : int;
+		field z : int;
+	}
+}
+--- edit
+move A.x to 2
+--- expect
+unit U {
+	concept A {
+		field y : int;
+		field z : int;
+		field x : int;
+	}
+}
+
+=== move a parameter
+known-defect: P2PP-D-10
+--- source
+unit U {
+	concept A {
+		method m(a : int, b : string, c : bool);
+	}
+}
+--- edit
+move A.m.c to 0
+--- expect
+unit U {
+	concept A {
+		method m(c : bool, a : int, b : string);
+	}
+}
+
+=== move a concept
+known-defect: P2PP-D-10
+--- source
+unit U {
+	concept A {
+	}
+	concept B {
+	}
+}
+--- edit
+move A to 1
+--- expect
+unit U {
+	concept B {
+	}
+	concept A {
+	}
+}

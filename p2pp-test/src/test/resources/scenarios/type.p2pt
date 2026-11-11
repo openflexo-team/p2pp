@@ -1,0 +1,50 @@
+# Child contents (the type of a field) and dynamic contents (the type of a parameter).
+
+=== change the type of a field
+--- source
+unit U {
+	concept A {
+		field x : int;
+	}
+}
+--- edit
+set type A.x long
+--- expect
+unit U {
+	concept A {
+		field x : long;
+	}
+}
+
+=== change the type of a parameter
+--- source
+unit U {
+	concept A {
+		method m(a : int, b : string);
+	}
+}
+--- edit
+set type A.m.a bool
+--- expect
+unit U {
+	concept A {
+		method m(a : bool, b : string);
+	}
+}
+
+=== change both the name and the type of a field
+--- source
+unit U {
+	concept A {
+		field x : int; // keep me
+	}
+}
+--- edit
+rename A.x to y
+set type A.y string
+--- expect
+unit U {
+	concept A {
+		field y : string; // keep me
+	}
+}

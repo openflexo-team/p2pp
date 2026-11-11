@@ -65,6 +65,77 @@ the parsed text, which is why a source in another layout is reformatted (P2PP-D-
 
 ## Conventions of the sample sources
 
-A file whose first row is `// p2pp-known-defect: P2PP-D-n` is a source that p2pp does not reproduce yet: `TestMiniCorpus` then expects
-the difference and fails, asking to remove the row, when the defect is fixed. The final line separator of a file is dropped before
+A file whose first row is `// p2pp-known-defect: P2PP-D-n` is a source that p2pp does not reproduce yet: `TestMiniCorpus` then fails like
+any other test (see below for the tolerant run). The final line separator of a file is dropped before
 parsing (P2PP-D-5).
+
+## Scenarios (`src/test/resources/scenarios/*.p2pt`)
+
+A scenario gives a source, edits applied to its model, and the text the derived pretty-print must then be. Run by `TestMiniScenarios`
+(one test per scenario), through `ScenarioRunner`.
+
+```
+# a comment, outside a block
+=== add a field at the end of the members
+known-defect: P2PP-D-9           (optional)
+--- source
+unit U {
+	concept A {
+		field x : int;
+	}
+}
+--- edit
+add field A y : string
+--- expect
+unit U {
+	concept A {
+		field x : int;
+		field y : string;
+	}
+}
+--- expect-normalized                (optional)
+```
+
+A block ends at the next `---` or `===` row; its trailing blank rows and final line separator are not part of it. Edits are applied in
+order, to the model only, then the document is pretty-printed once. They are written with names as they are at that moment (after
+`rename A to Z`, the concept is `Z`).
+
+| Edit | Effect |
+|---|---|
+| `rename PATH to NAME` | rename the unit, a concept, a member or a parameter |
+| `set abstract CONCEPT true\|false`, `set parent CONCEPT NAME\|none` | the two conditions of a concept |
+| `set type PATH TYPE` | the type of a field or of a parameter |
+| `add concept NAME [abstract] [extends P] [at N]` | add a concept to the unit |
+| `add field CONCEPT NAME : TYPE [at N]`, `add method CONCEPT NAME ( [p : T, ...] ) [at N]` | add a member |
+| `add param PATH NAME : TYPE [at N]` | add a parameter to a method |
+| `remove PATH`, `move PATH to N` | remove, or reorder inside its list |
+
+A PATH is `unit`, `A` (a concept), `A.x` (a member) or `A.m.p` (a parameter). Indexes start at 0; without `at`, the element goes last.
+
+Besides the expected text, each scenario checks that the derived text parses back to the edited model, and that it is stable (parsed and
+pretty-printed again, it does not change). `known-defect: P2PP-D-n[, P2PP-D-m]` marks a scenario that p2pp does not pass yet, with the
+ideal result as `expect`: the scenario fails like any other until the defect is fixed. An edit that cannot be
+applied (unknown path...) is an error of the scenario, never an expected failure.
+
+## Known defects in the results
+
+A test that shows a known defect of p2pp-core (`../p2pp-core/KNOWN_DEFECTS.md`) FAILS, like any other: the goal is to fix the defects.
+The `known-defect` marks of scenarios and corpus files only say which defect a test is about.
+
+To get a green build while the defects are open, tolerate them:
+
+```bash
+./gradlew :p2pp-test:test -Dp2pp.tolerateKnownDefects=true
+```
+
+Those tests then wait for the fix: they are skipped, or, for a marked scenario or corpus file, they expect the failure (and fail when it
+is gone, asking to remove the mark). Each of them is recorded, and the end of the `test` task prints which defects the run waits for:
+
+```
+Known p2pp defects waited for by this run (p2pp-core/KNOWN_DEFECTS.md): 10 defects, 31 defect/test pairs
+  P2PP-D-2   1 test(s)
+  ...
+```
+
+A test that cannot run at all until a fix (it would crash, or has no sensible result to expect) starts with
+`KnownDefects.skipIfTolerated("P2PP-D-n")`. The details are in `KnownDefects` (test sources) and the `test` configuration of `build.gradle`.

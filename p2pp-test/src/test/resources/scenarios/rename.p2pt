@@ -1,0 +1,171 @@
+# Dynamic contents: a name changes, nothing else does.
+
+=== rename the unit
+--- source
+unit U {
+	concept A {
+		field x : int;
+	}
+}
+--- edit
+rename unit to V
+--- expect
+unit V {
+	concept A {
+		field x : int;
+	}
+}
+
+=== rename a concept
+--- source
+unit U {
+	concept A {
+	}
+	concept C {
+	}
+}
+--- edit
+rename A to Z
+--- expect
+unit U {
+	concept Z {
+	}
+	concept C {
+	}
+}
+
+=== rename a field
+--- source
+unit U {
+	concept A {
+		field x : int;
+		field y : int;
+	}
+}
+--- edit
+rename A.y to w
+--- expect
+unit U {
+	concept A {
+		field x : int;
+		field w : int;
+	}
+}
+
+=== rename a method
+--- source
+unit U {
+	concept A {
+		method m(a : int, b : string);
+	}
+}
+--- edit
+rename A.m to other
+--- expect
+unit U {
+	concept A {
+		method other(a : int, b : string);
+	}
+}
+
+=== rename a parameter
+--- source
+unit U {
+	concept A {
+		method m(a : int, b : string);
+	}
+}
+--- edit
+rename A.m.b to label
+--- expect
+unit U {
+	concept A {
+		method m(a : int, label : string);
+	}
+}
+
+=== rename with a longer and a shorter name
+--- source
+unit U {
+	concept A {
+		field x : int;
+	}
+}
+--- edit
+rename A.x to y
+rename A to AVeryLongConceptName
+--- expect
+unit U {
+	concept AVeryLongConceptName {
+		field y : int;
+	}
+}
+
+=== rename to the same name changes nothing
+--- source
+unit U {
+	concept A {
+	}
+}
+--- edit
+rename A to A
+--- expect
+unit U {
+	concept A {
+	}
+}
+
+=== rename keeps the comments around
+--- source
+// header
+unit U {
+	// before A
+	concept A { // after the brace
+		field x : int; // after x
+		/* before m */
+		method m(a : int /* inline */);
+	}
+}
+// trailer
+--- edit
+rename A.x to y
+rename A.m to n
+rename A to Z
+--- expect
+// header
+unit U {
+	// before A
+	concept Z { // after the brace
+		field y : int; // after x
+		/* before m */
+		method n(a : int /* inline */);
+	}
+}
+// trailer
+
+=== rename in a source with another indentation and blank rows
+--- source
+unit U {
+  concept A {
+    field x : int;
+
+    method m(a : int);
+  }
+
+  concept C {
+  }
+}
+--- edit
+rename A.x to y
+rename C to D
+--- expect
+unit U {
+  concept A {
+    field y : int;
+
+    method m(a : int);
+  }
+
+  concept D {
+  }
+}
