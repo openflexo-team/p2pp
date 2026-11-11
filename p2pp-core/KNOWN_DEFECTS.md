@@ -132,7 +132,7 @@ as `A, B, Z`. In a comma-separated list the text is not even valid: adding `z : 
 of the LAST parsed node, and only moves them when it meets a parsed child: a new child met before any parsed one lands there. No
 separator is added after an inserted first item either. A child inserted in the middle or at the end is placed correctly. Reproduced by
 `add a concept at the start of a unit`, `add a field at the start of the members` and `add a parameter at the start of a method`
-(`add.p2pt`), and by the groups `add-concept/first`, `add-member/first` and `add-param/first` of the edit matrix.
+(`add.p2pt`), and by the groups `add-concept/first`, `add-member/first` and `add-param/first` of the edit matrix, and, on B (`formod/b-ta-test`), by the groups `add-set/first`, `add-constant/first` and `add-variable/first` of `TestBEditMatrix`.
 
 ## P2PP-D-9 - Only one level of indentation is known inside a nested node
 
@@ -161,18 +161,24 @@ that add a member and by `remove.p2pt` (members, methods), and by the groups `ad
 Status: TODO
 
 **Symptom.** After `move A.z to 0` on the members `x, y, z`, the derived text still reads `x, y, z`: it no longer matches the model, and
-does not parse back to it. Same for parameters and concepts (groups `move-*/*` of the edit matrix).
+does not parse back to it. Same for parameters and concepts (groups `move-*/*` of the edit matrix, and `move-set/*`, `move-constant/*`, `move-variable/*` of `TestBEditMatrix` on B).
 
 **Mechanism - read in the code.** `ChildrenContents.updatePrettyPrint()` replaces each parsed child by its own text, in place (`Case 5`):
 nothing compares the order of the model with the order of the parsed nodes. Reproduced by `move.p2pt`.
 
-## P2PP-D-11 - Removing the first item of a list leaves its separator when `preludeForFirstItem` is empty
+## P2PP-D-11 - Removing the first or the last item of a list leaves its separator when the matching `...ForFirstItem` / `...ForLastItem` is empty
 
 Status: TODO
 
-**Symptom.** Removing `a` from `m(a : int, b : string, c : bool)` gives `m(, b : string, c : bool)`.
+**Symptom.** Two mirror cases, both leaving a separator that no item uses any more:
 
-**Mechanism - read in the code.** The separator `", "` is the prelude of the items after the first; the first item declares `""` as
-`preludeForFirstItem`. In the removal, `wasFirst` tests `StringUtils.isNotEmpty(preludeForFirstItem)` to decide to remove the prelude of the new
-first node, while the insertion and the normalized pretty-print test `preludeForFirstItem != null`. With `""` the separator is left. The
-same test is made on `postludeForLastItem` for the last item. Reproduced by `remove the first parameter` (`remove.p2pt`) and the group `remove-param/first` of the edit matrix.
+- Removing `a` from `m(a : int, b : string, c : bool)` gives `m(, b : string, c : bool)` (Mini). The separator `", "` is the prelude of the
+  items after the first; the first item declares `""` as `preludeForFirstItem`.
+- Removing the last set of `SETS GGG; Hhh; kkk = {LLL}` gives `SETS GGG; Hhh; ` followed by `END`, which does not parse (B). The separator
+  `";"` is the postlude of each item; the last one declares `""` as `postludeForLastItem`.
+
+**Mechanism - read in the code.** In the removal, `wasFirst` tests `StringUtils.isNotEmpty(preludeForFirstItem)` to decide to remove the
+prelude of the new first node, and `wasLast` tests `StringUtils.isNotEmpty(postludeForLastItem)` to decide to remove the postlude of the new
+last node; the insertion and the normalized pretty-print test `!= null`. With `""` the separator is left. Reproduced by
+`remove the first parameter` (`remove.p2pt`) and the group `remove-param/first` of the Mini edit matrix, and, on the B component of
+`formod/b-ta-test`, by the groups `remove-set/last`, `remove-constant/last` and `remove-variable/last` of `TestBEditMatrix`.

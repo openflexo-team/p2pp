@@ -186,3 +186,9 @@ To have the summary of the known defects and the `-Dp2pp.tolerateKnownDefects=tr
 
 Not done yet, to consume this module from another repository: a helper `p2ppTest()` in `OpenFlexoConvention` of `openflexo-buildplugin`
 (a change of the plugin, to publish before the repositories that use it are built), then the dependency in the test module of the language.
+
+## B, the second language
+
+`formod/b-ta-test` runs the harness on B (the test classes `TestBPrettyPrintInvariants` and `TestBEditMatrix`, the target `BTarget`, the edit
+language `BEdits` and its generator `BEditGenerator`). Its known-defect table is `b-matrix-known-defects.txt`. It found no defect of its
+own so far: the groups that fail are the ones P2PP-D-8, D-10 and D-11 already explain, here with the visible separators of B (`;` and `,`).

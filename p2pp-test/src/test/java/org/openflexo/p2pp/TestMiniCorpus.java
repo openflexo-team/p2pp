@@ -3,6 +3,7 @@ package org.openflexo.p2pp;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,7 +22,9 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.openflexo.p2pp.mini.MiniDocument;
 import org.openflexo.p2pp.mini.MiniParseException;
+import org.openflexo.p2pp.mini.MiniTarget;
 import org.openflexo.p2pp.testing.KnownDefects;
+import org.openflexo.p2pp.testing.UntouchedChecks;
 
 /**
  * The corpus of Mini sources ({@code src/test/resources/mini/*.mini}): every file is parsed and checked against the invariants of the
@@ -92,6 +95,17 @@ public class TestMiniCorpus {
 		else {
 			assertNotEquals(knownDefect + " seems fixed: remove the known-defect row of this file", source, derived);
 			KnownDefects.register(knownDefect, "TestMiniCorpus." + name);
+		}
+	}
+
+	@Test
+	public void untouchedChecksOfTheHarness() {
+		// The first level of the harness (see UntouchedChecks), as another language runs it on its sources
+		List<String> failures = UntouchedChecks.check(new MiniTarget(), source);
+		if (knownDefect == null || !KnownDefects.areTolerated()) {
+			if (!failures.isEmpty() && knownDefect == null) {
+				fail(name + "\n" + String.join("\n", failures));
+			}
 		}
 	}
 
