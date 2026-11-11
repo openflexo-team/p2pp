@@ -1,0 +1,11 @@
+unit Members {
+	concept A {
+		field a : int;
+		method none();
+		field b : string;
+		method one(x : int);
+		method three(x : int, y : string, z : bool);
+		field c : A;
+		method none2();
+	}
+}

@@ -1,0 +1,11 @@
+unit U {
+  concept A {
+    field x : int;
+
+    /* the method */
+    method m(a : int);
+  }
+
+  concept B extends A {
+  }
+}

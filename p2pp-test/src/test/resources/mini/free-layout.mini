@@ -1,0 +1,6 @@
+// p2pp-known-defect: P2PP-D-6
+unit U{abstract   concept A extends B{ field x:int; // x
+ method m( a:int ,b : string ) ; }
+
+
+  concept C{}}

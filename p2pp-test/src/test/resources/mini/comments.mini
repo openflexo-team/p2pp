@@ -1,0 +1,19 @@
+// A header comment,
+// over two rows.
+
+/* A block comment
+   over two rows. */
+unit Commented {
+	// before a concept
+	concept A {
+		field x : int; // after a field
+		/* before a method */
+		method m(a : int /* inline */, b : string);
+	}
+
+	/* before a concept, after a blank row */
+	abstract concept B extends A {
+		// nothing but a comment
+	}
+}
+// A trailer comment.

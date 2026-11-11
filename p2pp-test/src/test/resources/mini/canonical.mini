@@ -1,0 +1,8 @@
+unit U {
+	abstract concept A extends B {
+		field x : int;
+		method m(a : int, b : string);
+	}
+	concept C {
+	}
+}

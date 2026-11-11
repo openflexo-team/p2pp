@@ -1,3 +1,4 @@
 rootProject.name = 'p2pp'
 
-include 'p2pp-core'
+include 'p2pp-core',
+        'p2pp-test'

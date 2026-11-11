@@ -1,0 +1,8 @@
+// Tests of p2pp-core, and the test harness (fixture language, scenarios) that will grow here.
+// A module of its own, as in the other repositories (flexo-foundation-test, ...): p2pp-core ships no test code.
+dependencies {
+  testImplementation project(':p2pp-core')
+  testImplementation flexoUtils()
+  testImplementation connie()
+  testImplementation testUtils()
+}

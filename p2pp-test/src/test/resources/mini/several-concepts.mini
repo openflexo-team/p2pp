@@ -1,0 +1,14 @@
+unit Concepts {
+	concept Plain {
+	}
+	abstract concept AbstractOnly {
+	}
+	concept ChildOnly extends Plain {
+	}
+	abstract concept AbstractChild extends AbstractOnly {
+		field x : int;
+	}
+	concept Last {
+		method m();
+	}
+}
