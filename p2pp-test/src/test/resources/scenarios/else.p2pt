@@ -1,0 +1,93 @@
+# Conditional contents with an ELSE: 'const' when the condition holds, 'field' otherwise.
+
+=== a field becomes a constant
+--- source
+unit U {
+	concept A {
+		field x : int;
+	}
+}
+--- edit
+set const A.x true
+--- expect
+unit U {
+	concept A {
+		const x : int;
+	}
+}
+
+=== a constant becomes a field
+--- source
+unit U {
+	concept A {
+		const x : int;
+	}
+}
+--- edit
+set const A.x false
+--- expect
+unit U {
+	concept A {
+		field x : int;
+	}
+}
+
+=== flipping twice changes nothing
+--- source
+unit U {
+	concept A {
+		field x : int;
+		const y : int;
+	}
+}
+--- edit
+set const A.x true
+set const A.x false
+set const A.y false
+set const A.y true
+--- expect
+unit U {
+	concept A {
+		field x : int;
+		const y : int;
+	}
+}
+
+=== flip a member among others and rename it
+--- source
+unit U {
+	concept A {
+		field a : int;
+		const b : int; // b
+		field c : int;
+	}
+}
+--- edit
+set const A.a true
+set const A.b false
+rename A.b to z
+--- expect
+unit U {
+	concept A {
+		const a : int;
+		field z : int; // b
+		field c : int;
+	}
+}
+
+=== a new constant, a new field
+known-defect: P2PP-D-9
+--- source
+unit U {
+	concept A {
+	}
+}
+--- edit
+add field A x : int
+set const A.x true
+--- expect
+unit U {
+	concept A {
+		const x : int;
+	}
+}

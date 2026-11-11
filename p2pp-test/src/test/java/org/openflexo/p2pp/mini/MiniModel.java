@@ -36,7 +36,11 @@ public final class MiniModel {
 	}
 
 	public static Field field(String name, String type) {
-		return new Field(name, new TypeRef(type));
+		return new Field(name, type == null ? null : new TypeRef(type));
+	}
+
+	public static Field constant(String name, String type) {
+		return new Field(name, type == null ? null : new TypeRef(type)).setConst(true);
 	}
 
 	public static Method method(String name, Param... params) {
@@ -163,6 +167,7 @@ public final class MiniModel {
 
 	public static class Field extends Member {
 		private TypeRef type;
+		private boolean isConst;
 
 		public Field(String name, TypeRef type) {
 			super(name);
@@ -173,13 +178,23 @@ public final class MiniModel {
 			return type;
 		}
 
+		/** A constant is written with {@code const} instead of {@code field} (the type is optional in both cases) */
+		public boolean isConst() {
+			return isConst;
+		}
+
+		public Field setConst(boolean isConst) {
+			this.isConst = isConst;
+			return this;
+		}
+
 		public void setType(TypeRef type) {
 			this.type = type;
 		}
 
 		@Override
 		public void dump(StringBuilder sb, String indent) {
-			sb.append(indent).append("field ").append(getName()).append(" : ").append(type != null ? type.getName() : "?").append("\n");
+			sb.append(indent).append(isConst ? "const " : "field ").append(getName()).append(type != null ? " : " + type.getName() : "").append("\n");
 		}
 	}
 
@@ -230,7 +245,7 @@ public final class MiniModel {
 
 		@Override
 		public void dump(StringBuilder sb, String indent) {
-			sb.append(indent).append("param ").append(name).append(" : ").append(type).append("\n");
+			sb.append(indent).append("param ").append(name).append(type != null ? " : " + type : "").append("\n");
 		}
 	}
 

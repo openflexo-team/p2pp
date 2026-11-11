@@ -15,7 +15,7 @@ import org.openflexo.p2pp.mini.MiniAst.Tok;
  */
 public final class MiniParser {
 
-	private static final Set<String> KEYWORDS = new HashSet<>(Arrays.asList("unit", "abstract", "concept", "extends", "field", "method"));
+	private static final Set<String> KEYWORDS = new HashSet<>(Arrays.asList("unit", "abstract", "concept", "extends", "field", "const", "method"));
 	private static final String PUNCTUATION = "{}():;,";
 
 	private final RawSource raw;
@@ -158,14 +158,16 @@ public final class MiniParser {
 	}
 
 	private MiniAst member() throws MiniParseException {
-		if (peek("field")) {
+		if (peek("field") || peek("const")) {
 			MiniAst a = new MiniAst("field");
 			a.put("kw", next());
 			a.put("name", ident());
-			a.put("colon", expect(":"));
-			MiniAst type = new MiniAst("type");
-			type.put("name", ident());
-			a.add(type);
+			if (peek(":")) {
+				a.put("colon", next());
+				MiniAst type = new MiniAst("type");
+				type.put("name", ident());
+				a.add(type);
+			}
 			a.put("semi", expect(";"));
 			return a;
 		}
@@ -185,14 +187,16 @@ public final class MiniParser {
 			a.put("semi", expect(";"));
 			return a;
 		}
-		throw error("Expected 'field' or 'method'");
+		throw error("Expected 'field', 'const' or 'method'");
 	}
 
 	private MiniAst param() throws MiniParseException {
 		MiniAst a = new MiniAst("param");
 		a.put("name", ident());
-		a.put("colon", expect(":"));
-		a.put("type", ident());
+		if (peek(":")) {
+			a.put("colon", next());
+			a.put("type", ident());
+		}
 		return a;
 	}
 }

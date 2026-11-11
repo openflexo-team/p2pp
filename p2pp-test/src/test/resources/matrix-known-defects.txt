@@ -22,3 +22,5 @@ move-member/last    P2PP-D-10
 move-param/first    P2PP-D-10
 move-param/middle   P2PP-D-10
 move-param/last     P2PP-D-10
+set-type/-          P2PP-D-12, P2PP-D-13
+replace-type/-      P2PP-D-13

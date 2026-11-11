@@ -76,14 +76,33 @@ public class TestMiniCorpus {
 		MiniDocument.parse(source);
 	}
 
+	/** A check that a file with a known defect may fail, when the run tolerates the known defects; any other file, or run, must pass it */
+	private interface Check {
+		void run() throws Exception;
+	}
+
+	private void tolerating(String what, Check check) throws Exception {
+		if (knownDefect == null || !KnownDefects.areTolerated()) {
+			check.run();
+			return;
+		}
+		try {
+			check.run();
+		} catch (AssertionError | MiniParseException e) {
+			KnownDefects.register(knownDefect, "TestMiniCorpus." + name + " (" + what + ")");
+		}
+	}
+
 	@Test
-	public void normalizedPrettyPrintIsStable() throws MiniParseException {
-		MiniDocument doc = MiniDocument.parse(source);
-		String normalized = doc.normalized();
-		MiniDocument reparsed = MiniDocument.parse(normalized);
-		assertEquals(doc.getUnit().dump(), reparsed.getUnit().dump());
-		assertEquals(normalized, reparsed.normalized());
-		assertEquals("the normalized text is in the canonical layout", normalized, reparsed.derived());
+	public void normalizedPrettyPrintIsStable() throws Exception {
+		tolerating("normalized", () -> {
+			MiniDocument doc = MiniDocument.parse(source);
+			String normalized = doc.normalized();
+			MiniDocument reparsed = MiniDocument.parse(normalized);
+			assertEquals(doc.getUnit().dump(), reparsed.getUnit().dump());
+			assertEquals(normalized, reparsed.normalized());
+			assertEquals("the normalized text is in the canonical layout", normalized, reparsed.derived());
+		});
 	}
 
 	@Test
@@ -99,19 +118,21 @@ public class TestMiniCorpus {
 	}
 
 	@Test
-	public void untouchedChecksOfTheHarness() {
+	public void untouchedChecksOfTheHarness() throws Exception {
 		// The first level of the harness (see UntouchedChecks), as another language runs it on its sources
-		List<String> failures = UntouchedChecks.check(new MiniTarget(), source);
-		if (knownDefect == null || !KnownDefects.areTolerated()) {
-			if (!failures.isEmpty() && knownDefect == null) {
+		tolerating("harness", () -> {
+			List<String> failures = UntouchedChecks.check(new MiniTarget(), source);
+			if (!failures.isEmpty()) {
 				fail(name + "\n" + String.join("\n", failures));
 			}
-		}
+		});
 	}
 
 	@Test
-	public void derivedPrettyPrintStillParsesToTheSameModel() throws MiniParseException {
-		MiniDocument doc = MiniDocument.parse(source);
-		assertEquals(doc.getUnit().dump(), MiniDocument.parse(doc.derived()).getUnit().dump());
+	public void derivedPrettyPrintStillParsesToTheSameModel() throws Exception {
+		tolerating("reparse", () -> {
+			MiniDocument doc = MiniDocument.parse(source);
+			assertEquals(doc.getUnit().dump(), MiniDocument.parse(doc.derived()).getUnit().dump());
+		});
 	}
 }

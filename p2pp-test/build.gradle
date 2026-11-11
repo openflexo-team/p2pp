@@ -40,3 +40,19 @@ tasks.withType(Test).configureEach {
     }
   }
 }
+
+// Coverage of p2pp-core by the tests of this module: ./gradlew :p2pp-test:test :p2pp-test:coverageP2pp
+// The plugin's JaCoCo only reports the classes of the module that runs the tests; here the classes measured are those of p2pp-core.
+tasks.register('coverageP2pp', JacocoReport) {
+  group = 'verification'
+  description = 'Coverage of p2pp-core by the tests of p2pp-test (build/reports/jacoco/coverageP2pp)'
+  dependsOn tasks.named('test')
+  executionData(tasks.named('test').get())
+  classDirectories.from(project(':p2pp-core').sourceSets.main.output.classesDirs)
+  sourceDirectories.from(project(':p2pp-core').sourceSets.main.allJava.srcDirs)
+  reports {
+    xml.required = true
+    csv.required = true
+    html.required = true
+  }
+}

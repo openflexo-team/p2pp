@@ -1,0 +1,118 @@
+# A single child under a condition (the type of a field), and a dynamic value that becomes empty (the type of a parameter).
+
+=== remove the type of a field
+known-defect: P2PP-D-7
+--- source
+unit U {
+	concept A {
+		field x : int;
+	}
+}
+--- edit
+set type A.x none
+--- expect
+unit U {
+	concept A {
+		field x;
+	}
+}
+
+=== give a type to an untyped field
+known-defect: P2PP-D-13
+--- source
+unit U {
+	concept A {
+		field x;
+	}
+}
+--- edit
+set type A.x int
+--- expect
+unit U {
+	concept A {
+		field x : int;
+	}
+}
+
+=== replace the type object of a field
+--- source
+unit U {
+	concept A {
+		field x : int;
+	}
+}
+--- edit
+replace type A.x long
+--- expect
+unit U {
+	concept A {
+		field x : long;
+	}
+}
+
+=== remove the type of a parameter in the middle
+known-defect: P2PP-D-12
+--- source
+unit U {
+	concept A {
+		method m(a : int, b : string, c : bool);
+	}
+}
+--- edit
+set type A.m.b none
+--- expect
+unit U {
+	concept A {
+		method m(a : int, b, c : bool);
+	}
+}
+
+=== remove the type of the only parameter
+known-defect: P2PP-D-12
+--- source
+unit U {
+	concept A {
+		method m(a : int);
+	}
+}
+--- edit
+set type A.m.a none
+--- expect
+unit U {
+	concept A {
+		method m(a);
+	}
+}
+
+=== give a type to an untyped parameter
+--- source
+unit U {
+	concept A {
+		method m(a, b : int);
+	}
+}
+--- edit
+set type A.m.a string
+--- expect
+unit U {
+	concept A {
+		method m(a : string, b : int);
+	}
+}
+
+=== a constant without type gets one, then loses it
+--- source
+unit U {
+	concept A {
+		const x;
+	}
+}
+--- edit
+set type A.x int
+set type A.x none
+--- expect
+unit U {
+	concept A {
+		const x;
+	}
+}

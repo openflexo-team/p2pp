@@ -10,6 +10,7 @@ import org.openflexo.p2pp.mini.MiniModel.Field;
 import org.openflexo.p2pp.mini.MiniModel.Member;
 import org.openflexo.p2pp.mini.MiniModel.Method;
 import org.openflexo.p2pp.mini.MiniModel.Param;
+import org.openflexo.p2pp.mini.MiniModel.TypeRef;
 import org.openflexo.p2pp.mini.MiniModel.Unit;
 
 /**
@@ -20,7 +21,9 @@ import org.openflexo.p2pp.mini.MiniModel.Unit;
  * rename PATH to NAME
  * set abstract CONCEPT true|false
  * set parent CONCEPT NAME|none
- * set type PATH TYPE                    (the type of a field or of a parameter)
+ * set type PATH TYPE|none              (the type of a field or of a parameter; a field without type gets a new one)
+ * replace type PATH TYPE                (a field gets a NEW type object, instead of renaming its type)
+ * set const PATH true|false             (a field is written with 'const' instead of 'field')
  * add concept NAME [abstract] [extends PARENT] [at N]
  * add field CONCEPT NAME : TYPE [at N]
  * add method CONCEPT NAME ( [p : T, ...] ) [at N]
@@ -42,6 +45,8 @@ public final class MiniEdits {
 	private static final Pattern SET_ABSTRACT = Pattern.compile("set abstract " + ID + " (true|false)");
 	private static final Pattern SET_PARENT = Pattern.compile("set parent " + ID + " " + ID);
 	private static final Pattern SET_TYPE = Pattern.compile("set type " + PATH + " " + ID);
+	private static final Pattern SET_CONST = Pattern.compile("set const " + PATH + " (true|false)");
+	private static final Pattern REPLACE_TYPE = Pattern.compile("replace type " + PATH + " " + ID);
 	private static final Pattern ADD_CONCEPT = Pattern.compile("add concept " + ID + "( abstract)?(?: extends " + ID + ")?" + AT);
 	private static final Pattern ADD_FIELD = Pattern.compile("add field " + ID + " " + ID + " : " + ID + AT);
 	private static final Pattern ADD_METHOD = Pattern.compile("add method " + ID + " " + ID + " ?\\(([^)]*)\\)" + AT);
@@ -78,15 +83,39 @@ public final class MiniEdits {
 		}
 		else if ((m = SET_TYPE.matcher(command)).matches()) {
 			Object target = resolve(unit, m.group(1));
+			String newType = m.group(2);
 			if (target instanceof Field) {
-				((Field) target).getType().setName(m.group(2));
+				Field f = (Field) target;
+				if (newType.equals("none")) {
+					f.setType(null);
+				}
+				else if (f.getType() == null) {
+					f.setType(new TypeRef(newType));
+				}
+				else {
+					f.getType().setName(newType);
+				}
 			}
 			else if (target instanceof Param) {
-				((Param) target).setType(m.group(2));
+				((Param) target).setType(newType.equals("none") ? null : newType);
 			}
 			else {
 				throw new IllegalArgumentException("'" + m.group(1) + "' has no type");
 			}
+		}
+		else if ((m = REPLACE_TYPE.matcher(command)).matches()) {
+			Object target = resolve(unit, m.group(1));
+			if (!(target instanceof Field)) {
+				throw new IllegalArgumentException("'" + m.group(1) + "' is not a field");
+			}
+			((Field) target).setType(new TypeRef(m.group(2)));
+		}
+		else if ((m = SET_CONST.matcher(command)).matches()) {
+			Object target = resolve(unit, m.group(1));
+			if (!(target instanceof Field)) {
+				throw new IllegalArgumentException("'" + m.group(1) + "' is not a field");
+			}
+			((Field) target).setConst(Boolean.parseBoolean(m.group(2)));
 		}
 		else if ((m = ADD_CONCEPT.matcher(command)).matches()) {
 			Concept c = new Concept(m.group(1)).setAbstract(m.group(2) != null).setParentName(m.group(3));

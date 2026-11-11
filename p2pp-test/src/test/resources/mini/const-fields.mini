@@ -1,0 +1,7 @@
+unit Consts {
+	concept A {
+		const c : int;
+		field x : int;
+		const d : string;
+	}
+}

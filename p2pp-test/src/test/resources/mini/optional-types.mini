@@ -1,0 +1,8 @@
+unit Optional {
+	concept A {
+		field untyped;
+		const alsoUntyped;
+		field typed : int;
+		method n(x : bool);
+	}
+}

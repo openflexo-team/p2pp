@@ -6,6 +6,7 @@ import org.openflexo.p2pp.PrettyPrintContext.Indentation;
 import org.openflexo.p2pp.RawSource;
 import org.openflexo.p2pp.RawSource.RawSourceFragment;
 import org.openflexo.p2pp.RawSource.RawSourcePosition;
+import org.openflexo.p2pp.SequentialContents;
 import org.openflexo.p2pp.mini.MiniModel.Concept;
 import org.openflexo.p2pp.mini.MiniModel.Field;
 import org.openflexo.p2pp.mini.MiniModel.Member;
@@ -220,7 +221,7 @@ public final class MiniNodes {
 
 		@Override
 		public Field buildModelObjectFromAST(MiniAst ast) {
-			return new Field(ast.text("name"), null);
+			return new Field(ast.text("name"), null).setConst("const".equals(ast.text("kw")));
 		}
 
 		@Override
@@ -232,10 +233,14 @@ public final class MiniNodes {
 		@Override
 		protected void preparePrettyPrint(boolean hasParsedVersion) {
 			super.preparePrettyPrint(hasParsedVersion);
-			append(staticContents("", "field", " "), frag("kw"));
+			// 'const' or 'field': a condition with its ELSE. Only the branch that was parsed knows its token.
+			boolean parsedConst = getASTNode() != null && "const".equals(getASTNode().text("kw"));
+			when(() -> getModelObject().isConst(), "const").thenAppend(staticContents("", "const", " "), parsedConst ? frag("kw") : null)
+					.elseAppend(staticContents("", "field", " "), parsedConst ? null : frag("kw"));
 			append(dynamicContents(() -> getModelObject().getName()), frag("name"));
-			append(staticContents(" ", ":", " "), frag("colon"));
-			append(childContents("", () -> getModelObject().getType(), "", Indentation.DoNotIndent));
+			// the type is optional: ':' and the type, a sequence containing a single child, under a condition
+			when(() -> getModelObject().getType() != null, "type").thenAppend(staticContents(" ", ":", " "), frag("colon"))
+					.thenAppend(childContents("", () -> getModelObject().getType(), "", Indentation.DoNotIndent));
 			append(staticContents("", ";", ""), frag("semi"));
 		}
 	}
@@ -294,8 +299,10 @@ public final class MiniNodes {
 		@Override
 		protected void preparePrettyPrint(boolean hasParsedVersion) {
 			super.preparePrettyPrint(hasParsedVersion);
-			append(staticContents("", "method", " "), frag("kw"));
-			append(dynamicContents(() -> getModelObject().getName()), frag("name"));
+			// the header is a block of its own, built directly as a sequence
+			SequentialContents<MiniAst, Method> header = appendBlock();
+			header.append(staticContents("", "method", " "), frag("kw"));
+			header.append(dynamicContents(() -> getModelObject().getName()), frag("name"));
 			append(staticContents("", "(", ""), frag("open"));
 			append(childrenContents("", ", ", () -> getModelObject().getParams(), "", "", Indentation.DoNotIndent, Param.class));
 			append(staticContents("", ")", ""), frag("close"));
@@ -329,8 +336,8 @@ public final class MiniNodes {
 		protected void preparePrettyPrint(boolean hasParsedVersion) {
 			super.preparePrettyPrint(hasParsedVersion);
 			append(dynamicContents(() -> getModelObject().getName()), frag("name"));
-			append(staticContents(" ", ":", " "), frag("colon"));
-			append(dynamicContents(() -> getModelObject().getType()), frag("type"));
+			// the type is optional: its prelude (the colon) goes with it when its value is empty
+			append(dynamicContents(" : ", () -> getModelObject().getType()), frag("type"));
 		}
 	}
 }

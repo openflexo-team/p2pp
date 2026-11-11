@@ -29,12 +29,12 @@ unit U {
 unit      ::= "unit" ID "{" concept* "}"                 -- end of source right after
 concept   ::= [ "abstract" ] "concept" ID [ "extends" ID ] "{" member* "}"
 member    ::= field | method
-field     ::= "field" ID ":" ID ";"
+field     ::= ( "field" | "const" ) ID [ ":" ID ] ";"
 method    ::= "method" ID "(" [ param { "," param } ] ")" ";"
-param     ::= ID ":" ID
+param     ::= ID [ ":" ID ]
 
 ID          ::= (letter | "_") (letter | digit | "_")*   -- not a keyword
-keywords    ::= unit abstract concept extends field method
+keywords    ::= unit abstract concept extends field const method
 punctuation ::= { } ( ) : ; ,
 ignored     ::= whitespace, "// ...", "/* ... */" (a block comment may span several rows)
 ```
@@ -48,9 +48,9 @@ character or text after the unit is a syntax error, located by line and column.
 Unit     (name, concepts : Concept*)
 Concept  (name, isAbstract : bool, parentName : String?, members : Member*)
 Member   = Field | Method
-Field    (name, type : TypeRef)
+Field    (name, isConst : bool, type : TypeRef?)
 Method   (name, params : Param*)
-Param    (name : String, type : String)
+Param    (name : String, type : String?)
 TypeRef  (name)
 ```
 
@@ -65,7 +65,10 @@ parent of a concept is a name, not a reference. They exercise the single-child c
 | names (unit, concept, member, parameter, parent, parameter type) | dynamic | none |
 | `abstract` | conditional (`isAbstract`) | `␣` after |
 | `extends` + parent name | conditional holding a sequence of two contents (`parentName != null`) | `␣extends␣` |
-| type of a field | single child (`TypeRef`) | none |
+| `const` / `field` | conditional with an `ELSE` (`isConst`): each branch only knows its token when it was the parsed one | none |
+| `:` and the type of a field | conditional (`type != null`) holding a static contents and a single child (`TypeRef`) | `␣:␣` |
+| type of a parameter | dynamic with its prelude `␣:␣`, whose value can be `null` | `␣:␣` |
+| keyword and name of a method | a sequential block built directly (`appendBlock()`) | none |
 | concepts of a unit, members of a concept | children, indented | `⏎` after each |
 | parameters of a method | children, not indented | `, ` between items |
 
@@ -113,7 +116,8 @@ order, to the model only, then the document is pretty-printed once. They are wri
 |---|---|
 | `rename PATH to NAME` | rename the unit, a concept, a member or a parameter |
 | `set abstract CONCEPT true\|false`, `set parent CONCEPT NAME\|none` | the two conditions of a concept |
-| `set type PATH TYPE` | the type of a field or of a parameter |
+| `set type PATH TYPE\|none` | the type of a field or of a parameter (a field without type gets a new one) |
+| `replace type PATH TYPE`, `set const PATH true\|false` | a field gets a NEW type object; `const` or `field` |
 | `add concept NAME [abstract] [extends P] [at N]` | add a concept to the unit |
 | `add field CONCEPT NAME : TYPE [at N]`, `add method CONCEPT NAME ( [p : T, ...] ) [at N]` | add a member |
 | `add param PATH NAME : TYPE [at N]` | add a parameter to a method |

@@ -118,7 +118,7 @@ after the `abstract` condition goes false on a concept whose parent is removed t
 **Verified in the code.** `PrettyPrintableContents.getExtendedFragment()` (and `getExtendedFragmentNoRecomputation()`) builds the fragment
 with its prelude, then overwrites it with `getFragment().union(getPostludeFragment())` instead of `returned.union(...)`: when a contents
 has both a prelude and a postlude, the prelude is dropped from the fragment `ConditionalContents` removes. Reproduced by the scenarios
-`remove the parent` and `flip both conditions at once` of `conditional.p2pt`, and by the group `set-parent/-` of the edit matrix.
+`remove the parent` and `flip both conditions at once` of `conditional.p2pt`, `remove the type of a field` of `optional.p2pt`, and by the group `set-parent/-` of the edit matrix.
 
 ## P2PP-D-8 - A child added before the first parsed sibling is inserted after the last one
 
@@ -182,3 +182,30 @@ prelude of the new first node, and `wasLast` tests `StringUtils.isNotEmpty(postl
 last node; the insertion and the normalized pretty-print test `!= null`. With `""` the separator is left. Reproduced by
 `remove the first parameter` (`remove.p2pt`) and the group `remove-param/first` of the Mini edit matrix, and, on the B component of
 `formod/b-ta-test`, by the groups `remove-set/last`, `remove-constant/last` and `remove-variable/last` of `TestBEditMatrix`.
+
+## P2PP-D-12 - A dynamic contents whose value is null writes "null" in the derived pretty-print
+
+Status: TODO
+
+**Symptom.** A `DynamicContents` whose supplier returns `null` (a parameter without type, a name not set) is written as the text `null`
+when the node has been parsed: the untouched source `method m(a, b : int)` comes back as `method m(anull, b : int)`, which is another
+model. The normalized pretty-print is right (it treats `null` as empty).
+
+**Mechanism - read in the code.** `DynamicContents.updatePrettyPrint()` tests `StringUtils.isNotEmpty(replacedString)` to add the prelude and
+postlude, but then passes `replacedString` itself, `null`, to `DerivedRawSource.replace()`, whose `StringReplacement` appends it with
+`StringBuffer.append((String) null)`: `"null"`. An empty string is fine. Reproduced by the corpus file `optional-params.mini`, the scenarios
+`remove the type of a parameter in the middle` and `remove the type of the only parameter` (`optional.p2pt`), and the group `set-type/-` of the
+edit matrix. Open question for the owner: is a `null` supplier a legitimate answer (then it must mean "empty"), or must suppliers return
+`""`?
+
+## P2PP-D-13 - A child added where there was none is inserted at the end of the node
+
+Status: TODO
+
+**Symptom.** Giving a type to a field that had none, `field x;` -> `field x : int;`, gives `field x : ;int`: the `:` is written at its place and
+the type after the `;`. Same for `replace type` on an untyped field.
+
+**Mechanism - read in the code.** `ChildContents.updatePrettyPrint()` inserts a child that was not parsed at
+`getParentNode().getDefaultInsertionPoint()`, the end of the last contents of the node that has a parsed fragment (here the `;`), and not at the
+insertion point of the contents themselves (`getInsertionPoint()`, which follows the previous contents, as `StaticContents` does for the `:`).
+Reproduced by `give a type to an untyped field` (`optional.p2pt`) and the groups `set-type/-` and `replace-type/-` of the edit matrix.

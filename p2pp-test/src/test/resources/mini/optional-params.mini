@@ -1,0 +1,6 @@
+// p2pp-known-defect: P2PP-D-12
+unit OptionalParams {
+	concept A {
+		method m(a, b : int, c);
+	}
+}

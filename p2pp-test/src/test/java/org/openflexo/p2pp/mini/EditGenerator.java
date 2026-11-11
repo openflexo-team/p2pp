@@ -55,7 +55,11 @@ public final class EditGenerator {
 				String path = c.getName() + "." + m.getName();
 				renames(path, c.getName(), m.getName());
 				if (m instanceof Field) {
-					types(path, ((Field) m).getType().getName());
+					Field field = (Field) m;
+					String oldType = field.getType() == null ? null : field.getType().getName();
+					types(path, oldType);
+					add("set-const", "-", "set const " + path + " " + !field.isConst(), "set const " + path + " " + field.isConst());
+					add("replace-type", "-", "replace type " + path + " q", oldType == null ? "set type " + path + " none" : "replace type " + path + " " + oldType);
 				}
 				else {
 					for (Param p : ((Method) m).getParams()) {
@@ -127,8 +131,12 @@ public final class EditGenerator {
 	}
 
 	private void types(String path, String oldType) {
+		String undo = "set type " + path + " " + (oldType == null ? "none" : oldType);
 		for (String newType : Arrays.asList("q", "ALongTypeName")) {
-			add("set-type", "-", "set type " + path + " " + newType, "set type " + path + " " + oldType);
+			add("set-type", "-", "set type " + path + " " + newType, undo);
+		}
+		if (oldType != null) {
+			add("set-type", "-", "set type " + path + " none", undo);
 		}
 	}
 
