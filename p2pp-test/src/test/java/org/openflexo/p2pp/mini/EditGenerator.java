@@ -1,18 +1,17 @@
-package org.openflexo.p2pp.matrix;
+package org.openflexo.p2pp.mini;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.openflexo.p2pp.mini.MiniDocument;
 import org.openflexo.p2pp.mini.MiniModel.Concept;
+import org.openflexo.p2pp.testing.matrix.EditCase;
 import org.openflexo.p2pp.mini.MiniModel.Field;
 import org.openflexo.p2pp.mini.MiniModel.Member;
 import org.openflexo.p2pp.mini.MiniModel.Method;
 import org.openflexo.p2pp.mini.MiniModel.Param;
 import org.openflexo.p2pp.mini.MiniModel.Unit;
-import org.openflexo.p2pp.mini.MiniParseException;
 
 /**
  * Generates every atomic edit of the model of a Mini source, with its position class: rename each object (to a shorter and a longer

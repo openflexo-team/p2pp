@@ -5,6 +5,7 @@ import static org.junit.Assert.assertSame;
 
 import org.junit.Test;
 import org.openflexo.p2pp.PrettyPrintContext.Indentation;
+import org.openflexo.p2pp.testing.KnownDefects;
 
 /**
  * Tests of {@link DefaultPrettyPrintContext}: indentation of a pretty-printed text.

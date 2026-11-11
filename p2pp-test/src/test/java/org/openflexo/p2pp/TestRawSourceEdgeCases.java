@@ -13,6 +13,7 @@ import java.io.StringReader;
 import org.junit.Test;
 import org.openflexo.p2pp.RawSource.RawSourceFragment;
 import org.openflexo.p2pp.RawSource.RawSourcePosition;
+import org.openflexo.p2pp.testing.KnownDefects;
 
 /**
  * Edge cases of {@link RawSource}: source shapes (no trailing newline, blank lines, CRLF), positions, fragments, offsets.

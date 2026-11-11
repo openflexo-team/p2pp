@@ -1,4 +1,13 @@
-# Mini, the fixture language of the p2pp tests
+# Mini, the fixture language of the p2pp tests, and the harness it validates
+
+The module has two parts:
+
+- `src/main` (`org.openflexo.p2pp.testing`): the **harness**, reusable by any pretty-printer built on p2pp. Scenarios (`.p2pt`), the edit
+  matrix and the known defects, all on texts: it knows neither p2pp nor a language. A language supplies a `PrettyPrintTarget`.
+- `src/test`: **Mini**, a fixture language that is the first `PrettyPrintTarget` (`MiniTarget`), and the tests of p2pp-core. Running them
+  validates the harness.
+
+Below: Mini first, then the harness (scenarios, edit matrix, known defects), then how to run it on another language.
 
 Mini is a tiny language written for the tests of p2pp: each of its constructs exercises one kind of pretty-printable contents.
 Its parser, model and nodes are in `src/test/java/org/openflexo/p2pp/mini/`; the sample sources are in `src/test/resources/mini/`.
@@ -157,3 +166,23 @@ Known p2pp defects waited for by this run (p2pp-core/KNOWN_DEFECTS.md): 10 defec
 
 A test that cannot run at all until a fix (it would crash, or has no sensible result to expect) starts with
 `KnownDefects.skipIfTolerated("P2PP-D-n")`. The details are in `KnownDefects` (test sources) and the `test` configuration of `build.gradle`.
+
+## Running the harness on another language (B, FML...)
+
+What a language has to provide, and what the harness gives back:
+
+| The language provides | The harness runs |
+|---|---|
+| a `PrettyPrintTarget`: `parse(source)` giving a `Document` (`dump()` of the model, `derived()`, `normalized()`, `apply(command)`); optionally `comments(text)` and `layoutViolation(text)` | the invariants (parse-back, stable, comments, layout, undo) |
+| a language of edit commands (`apply`), the same in scenarios and in the matrix | the scenarios (`ScenarioFile`, `ScenarioRunner`) |
+| an `EditGenerator`: the `EditCase`s (edit, inverse, kind, position) of each source of its corpus | the matrix (`EditMatrix.group`, `EditMatrix.run`) |
+| sources (a corpus) and scenarios as resource files; the list of its known defects | the known-defect handling (`KnownDefects`, the tolerant run, the summary) |
+
+`TestMiniScenarios` and `TestMiniEditMatrix` are the model of the two test classes a language writes. A language that has no edit language
+yet can start with the first row only: the invariants on the untouched sources (`derived()` is the source, `normalized()` is stable).
+
+To have the summary of the known defects and the `-Dp2pp.tolerateKnownDefects=true` switch in the Gradle test task of the language, copy the
+`tasks.withType(Test)` block of `p2pp-test/build.gradle` (to be moved into the build plugin if several languages use it).
+
+Not done yet, to consume this module from another repository: a helper `p2ppTest()` in `OpenFlexoConvention` of `openflexo-buildplugin`
+(a change of the plugin, to publish before the repositories that use it are built), then the dependency in the test module of the language.

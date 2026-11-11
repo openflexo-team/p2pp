@@ -1,4 +1,4 @@
-package org.openflexo.p2pp.scenario;
+package org.openflexo.p2pp.mini;
 
 import java.util.ArrayList;
 import java.util.List;

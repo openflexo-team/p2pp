@@ -21,6 +21,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.openflexo.p2pp.mini.MiniDocument;
 import org.openflexo.p2pp.mini.MiniParseException;
+import org.openflexo.p2pp.testing.KnownDefects;
 
 /**
  * The corpus of Mini sources ({@code src/test/resources/mini/*.mini}): every file is parsed and checked against the invariants of the

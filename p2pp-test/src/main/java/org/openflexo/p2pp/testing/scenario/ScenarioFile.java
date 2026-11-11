@@ -1,4 +1,4 @@
-package org.openflexo.p2pp.scenario;
+package org.openflexo.p2pp.testing.scenario;
 
 import java.io.File;
 import java.io.IOException;

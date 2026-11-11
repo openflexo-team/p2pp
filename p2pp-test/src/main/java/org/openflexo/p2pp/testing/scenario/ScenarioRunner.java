@@ -1,17 +1,17 @@
-package org.openflexo.p2pp.scenario;
+package org.openflexo.p2pp.testing.scenario;
 
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openflexo.p2pp.KnownDefects;
-import org.openflexo.p2pp.mini.MiniDocument;
-import org.openflexo.p2pp.mini.MiniParseException;
-import org.openflexo.p2pp.scenario.Scenario.Edit;
+import org.openflexo.p2pp.testing.KnownDefects;
+import org.openflexo.p2pp.testing.PrettyPrintTarget;
+import org.openflexo.p2pp.testing.PrettyPrintTarget.Document;
+import org.openflexo.p2pp.testing.scenario.Scenario.Edit;
 
 /**
- * Runs a {@link Scenario}: parse the source, apply the edits to the model, pretty-print, and check
+ * Runs a {@link Scenario} on a language: parse the source, apply the edits to the model, pretty-print, and check
  * <ul>
  * <li>the derived pretty-print is the expected text;</li>
  * <li>the derived text parses back to the edited model (whatever the expected text is, it must still mean what the model says);</li>
@@ -27,39 +27,39 @@ public final class ScenarioRunner {
 	private ScenarioRunner() {
 	}
 
-	public static void run(Scenario scenario) {
-		MiniDocument doc;
+	public static void run(PrettyPrintTarget target, Scenario scenario) {
+		Document doc;
 		try {
-			doc = MiniDocument.parse(scenario.getSource());
-		} catch (MiniParseException e) {
+			doc = target.parse(scenario.getSource());
+		} catch (Exception e) {
 			throw new AssertionError(scenario + ": the source of the scenario does not parse: " + e.getMessage());
 		}
 		for (Edit edit : scenario.getEdits()) {
 			try {
-				MiniEdits.apply(doc.getUnit(), edit.command);
+				doc.apply(edit.command);
 			} catch (RuntimeException e) {
 				throw new AssertionError(scenario.getFile() + ":" + edit.line + ": " + e.getMessage() + " [" + edit.command + "]");
 			}
 		}
 
 		List<String> failures = new ArrayList<>();
-		String editedModel = doc.getUnit().dump();
+		String editedModel = doc.dump();
 		String derived = doc.derived();
 
 		if (!derived.equals(scenario.getExpect())) {
 			failures.add("derived pretty-print differs\n" + compare(scenario.getExpect(), derived));
 		}
 		try {
-			MiniDocument reparsed = MiniDocument.parse(derived);
-			if (!reparsed.getUnit().dump().equals(editedModel)) {
+			Document reparsed = target.parse(derived);
+			if (!reparsed.dump().equals(editedModel)) {
 				failures.add("the derived text does not parse back to the edited model\nedited model:\n" + editedModel + "parsed back:\n"
-						+ reparsed.getUnit().dump());
+						+ reparsed.dump());
 			}
 			String again = reparsed.derived();
 			if (!again.equals(derived)) {
 				failures.add("the derived text is not stable\n" + compare(derived, again));
 			}
-		} catch (MiniParseException e) {
+		} catch (Exception e) {
 			failures.add("the derived text does not parse: " + e.getMessage() + "\n" + show(derived));
 		}
 		if (scenario.getExpectNormalized() != null && !doc.normalized().equals(scenario.getExpectNormalized())) {

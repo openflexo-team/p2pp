@@ -1,6 +1,10 @@
-// Tests of p2pp-core, and the test harness (fixture language, scenarios) that will grow here.
+// Tests of p2pp-core, and the test harness other pretty-printers (B, FML...) can reuse.
 // A module of its own, as in the other repositories (flexo-foundation-test, ...): p2pp-core ships no test code.
+//  - src/main: the harness (org.openflexo.p2pp.testing): scenarios (.p2pt), edit matrix, known defects. It works on texts and knows
+//    nothing of p2pp, nor of a language: a language supplies a PrettyPrintTarget.
+//  - src/test: the Mini fixture language (a PrettyPrintTarget) and the tests of p2pp-core, which validate the harness.
 dependencies {
+  api testUtils()  // JUnit, which the harness uses
   testImplementation project(':p2pp-core')
   testImplementation flexoUtils()
   testImplementation connie()

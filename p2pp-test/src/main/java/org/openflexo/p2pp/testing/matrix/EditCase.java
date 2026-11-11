@@ -1,4 +1,4 @@
-package org.openflexo.p2pp.matrix;
+package org.openflexo.p2pp.testing.matrix;
 
 import java.util.List;
 

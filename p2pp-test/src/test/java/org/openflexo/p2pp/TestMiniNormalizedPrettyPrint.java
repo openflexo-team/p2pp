@@ -13,6 +13,7 @@ import org.openflexo.p2pp.mini.MiniModel.Concept;
 import org.openflexo.p2pp.mini.MiniModel.Field;
 import org.openflexo.p2pp.mini.MiniModel.Unit;
 import org.openflexo.p2pp.mini.MiniParseException;
+import org.openflexo.p2pp.testing.KnownDefects;
 
 /**
  * Normalized pretty-print (from scratch, from the model only) of the Mini language, one test group per kind of contents, then the round

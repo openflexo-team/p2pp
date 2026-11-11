@@ -1,4 +1,4 @@
-package org.openflexo.p2pp;
+package org.openflexo.p2pp.testing;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

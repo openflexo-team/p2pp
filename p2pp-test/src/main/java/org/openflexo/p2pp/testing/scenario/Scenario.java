@@ -1,10 +1,10 @@
-package org.openflexo.p2pp.scenario;
+package org.openflexo.p2pp.testing.scenario;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * One scenario of a {@code .p2pt} file: a Mini source, edits applied to its model, and the pretty-print expected afterwards.
+ * One scenario of a {@code .p2pt} file: a source, edits applied to its model, and the pretty-print expected afterwards.
  * <p>
  * File format (rows outside a block, before the first {@code ===}, are comments):
  *
@@ -14,7 +14,7 @@ import java.util.List;
  * --- source
  * text of the source
  * --- edit
- * one edit per row, see {@link MiniEdits}
+ * one edit per row, in the language of edits of the target
  * --- expect
  * text of the derived pretty-print
  * --- expect-normalized           (optional)

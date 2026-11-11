@@ -6,7 +6,8 @@ Parser / pretty-printer framework (P2PP): the `p2pp-core` module, used by the FM
 It was part of `openflexo-utils` until 2.0. It depends on `openflexo-utils` and on `connie`, hence its own repository
 (`openflexo-utils` is the bottom layer and must not depend on `connie`).
 
-The tests live in the `p2pp-test` module (`./gradlew :p2pp-test:test`); `p2pp-core` itself ships no test code.
+The tests live in the `p2pp-test` module (`./gradlew :p2pp-test:test`); `p2pp-core` itself ships no test code. That module also holds a test
+harness other pretty-printers can reuse, see `p2pp-test/MINI.md`.
 
 ## Approach: a layout-preserving parser/pretty-printer
 
