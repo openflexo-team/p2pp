@@ -118,7 +118,7 @@ after the `abstract` condition goes false on a concept whose parent is removed t
 **Verified in the code.** `PrettyPrintableContents.getExtendedFragment()` (and `getExtendedFragmentNoRecomputation()`) builds the fragment
 with its prelude, then overwrites it with `getFragment().union(getPostludeFragment())` instead of `returned.union(...)`: when a contents
 has both a prelude and a postlude, the prelude is dropped from the fragment `ConditionalContents` removes. Reproduced by the scenarios
-`remove the parent` and `flip both conditions at once` of `conditional.p2pt`.
+`remove the parent` and `flip both conditions at once` of `conditional.p2pt`, and by the group `set-parent/-` of the edit matrix.
 
 ## P2PP-D-8 - A child added before the first parsed sibling is inserted after the last one
 
@@ -132,7 +132,7 @@ as `A, B, Z`. In a comma-separated list the text is not even valid: adding `z : 
 of the LAST parsed node, and only moves them when it meets a parsed child: a new child met before any parsed one lands there. No
 separator is added after an inserted first item either. A child inserted in the middle or at the end is placed correctly. Reproduced by
 `add a concept at the start of a unit`, `add a field at the start of the members` and `add a parameter at the start of a method`
-(`add.p2pt`).
+(`add.p2pt`), and by the groups `add-concept/first`, `add-member/first` and `add-param/first` of the edit matrix.
 
 ## P2PP-D-9 - Only one level of indentation is known inside a nested node
 
@@ -154,14 +154,14 @@ Children at depth 1 (the concepts of a unit) are fine, and so is the normalized 
 `getResultingIndentation()` is a single tab: the text inserted into a parsed node is indented one level, whatever the depth of the node;
 and `handlePreludeAndPoslude()` looks for that single tab before a child, so a removal takes one tab out of two. Related to P2PP-D-1
 (same family: the indentation of the line an insertion lands on is not taken from the source). Reproduced by most scenarios of `add.p2pt`
-that add a member and by `remove.p2pt` (members, methods).
+that add a member and by `remove.p2pt` (members, methods), and by the groups `add-member/*` and `remove-member/*` of the edit matrix.
 
 ## P2PP-D-10 - Reordering the children of a node is ignored
 
 Status: TODO
 
 **Symptom.** After `move A.z to 0` on the members `x, y, z`, the derived text still reads `x, y, z`: it no longer matches the model, and
-does not parse back to it. Same for parameters and concepts.
+does not parse back to it. Same for parameters and concepts (groups `move-*/*` of the edit matrix).
 
 **Mechanism - read in the code.** `ChildrenContents.updatePrettyPrint()` replaces each parsed child by its own text, in place (`Case 5`):
 nothing compares the order of the model with the order of the parsed nodes. Reproduced by `move.p2pt`.
@@ -175,4 +175,4 @@ Status: TODO
 **Mechanism - read in the code.** The separator `", "` is the prelude of the items after the first; the first item declares `""` as
 `preludeForFirstItem`. In the removal, `wasFirst` tests `StringUtils.isNotEmpty(preludeForFirstItem)` to decide to remove the prelude of the new
 first node, while the insertion and the normalized pretty-print test `preludeForFirstItem != null`. With `""` the separator is left. The
-same test is made on `postludeForLastItem` for the last item. Reproduced by `remove the first parameter` (`remove.p2pt`).
+same test is made on `postludeForLastItem` for the last item. Reproduced by `remove the first parameter` (`remove.p2pt`) and the group `remove-param/first` of the edit matrix.

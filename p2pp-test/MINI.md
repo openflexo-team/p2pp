@@ -117,6 +117,24 @@ pretty-printed again, it does not change). `known-defect: P2PP-D-n[, P2PP-D-m]` 
 ideal result as `expect`: the scenario fails like any other until the defect is fixed. An edit that cannot be
 applied (unknown path...) is an error of the scenario, never an expected failure.
 
+## The edit matrix (`TestMiniEditMatrix`)
+
+Where scenarios say what a result must be, the matrix needs no expected text. For every source of the corpus (except those marked with a
+known defect) `EditGenerator` produces every atomic edit of its model, as the commands of the scenarios:
+
+- rename each object, to a shorter and a longer name; flip each condition; change each type;
+- add an object at every index of every list (concepts of the unit, members of a concept, parameters of a method);
+- remove each object; move each object to every other index.
+
+Each case is checked by `EditCaseChecker` against invariants that hold whatever the edit: the derived text parses back to the edited model;
+it is stable (parsed and pretty-printed again it does not change); no comment is lost (except by a removal); for a source laid out
+canonically, the derived text still is (one tab per level of braces, single spaces, no trailing space); and the edit followed by its inverse
+gives the pretty-print of the untouched source back, also on a document that was pretty-printed in between.
+
+Cases are run by group, one test per kind of edit and position (`add-member/first`, `remove-param/only`, `move-concept/middle`...): the
+message says how many cases of the group fail, and the first ones with the commands to reproduce them (paste them in a `.p2pt` scenario
+to keep one). The groups that show a known defect are listed in `src/test/resources/matrix-known-defects.txt`.
+
 ## Known defects in the results
 
 A test that shows a known defect of p2pp-core (`../p2pp-core/KNOWN_DEFECTS.md`) FAILS, like any other: the goal is to fix the defects.

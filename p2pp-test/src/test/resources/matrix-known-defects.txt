@@ -1,0 +1,24 @@
+# Groups of the edit matrix (TestMiniEditMatrix) that show a known defect of p2pp-core, as: kind/position  defects.
+# They fail like any other group, unless the run tolerates the known defects: they then must fail, and the build says which defects wait.
+# Remove a line when its defects are fixed.
+set-parent/-        P2PP-D-7
+add-concept/first   P2PP-D-8
+add-member/first    P2PP-D-8, P2PP-D-9
+add-member/middle   P2PP-D-9
+add-member/last     P2PP-D-9
+add-member/empty    P2PP-D-9
+add-param/first     P2PP-D-8
+remove-member/first   P2PP-D-9
+remove-member/middle  P2PP-D-9
+remove-member/last    P2PP-D-9
+remove-member/only    P2PP-D-9
+remove-param/first  P2PP-D-11
+move-concept/first  P2PP-D-10
+move-concept/middle P2PP-D-10
+move-concept/last   P2PP-D-10
+move-member/first   P2PP-D-10
+move-member/middle  P2PP-D-10
+move-member/last    P2PP-D-10
+move-param/first    P2PP-D-10
+move-param/middle   P2PP-D-10
+move-param/last     P2PP-D-10
