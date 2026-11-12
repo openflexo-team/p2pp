@@ -27,6 +27,15 @@ public interface PrettyPrintTarget {
 		return null;
 	}
 
+	/**
+	 * Whether two texts are the same for the invariants of an untouched source (the derived pretty-print is the source, the normalized
+	 * pretty-print is stable): by default, when they are equal. A language that writes some text of its own on purpose (an implicit import)
+	 * says here which differences do not count.
+	 */
+	default boolean sameText(String expected, String actual) {
+		return expected.equals(actual);
+	}
+
 	/** A parsed source */
 	interface Document {
 

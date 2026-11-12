@@ -33,7 +33,7 @@ public final class UntouchedChecks {
 		String model = doc.dump();
 
 		String derived = doc.derived();
-		if (!derived.equals(source)) {
+		if (!target.sameText(source, derived)) {
 			failures.add("derived: the pretty-print of the untouched source is not the source\n" + firstDifference(source, derived));
 		}
 		checkParseBack("derived-parse-back", target, derived, model, failures);
@@ -42,7 +42,7 @@ public final class UntouchedChecks {
 		checkParseBack("normalized-parse-back", target, normalized, model, failures);
 		try {
 			String again = target.parse(normalized).normalized();
-			if (!again.equals(normalized)) {
+			if (!target.sameText(normalized, again)) {
 				failures.add("normalized-stable: the normalized text, parsed and normalized again, changes\n"
 						+ firstDifference(normalized, again));
 			}
