@@ -76,7 +76,6 @@ unit U {
 }
 
 === a new constant, a new field
-known-defect: P2PP-D-9
 --- source
 unit U {
 	concept A {

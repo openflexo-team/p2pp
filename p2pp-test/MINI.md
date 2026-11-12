@@ -72,8 +72,9 @@ parent of a concept is a name, not a reference. They exercise the single-child c
 | concepts of a unit, members of a concept | children, indented | `⏎` after each |
 | parameters of a method | children, not indented | `, ` between items |
 
-These separators are the ones a node declares for the normalized pretty-print. The derived pretty-print looks for them as they are in
-the parsed text, which is why a source in another layout is reformatted (P2PP-D-6 in `p2pp-core/KNOWN_DEFECTS.md`).
+These separators are the ones a node declares for the normalized pretty-print. The derived pretty-print looks for them in the parsed text,
+as declared, then with other spaces around them; a separator that is only whitespace and is not found is the whitespace that actually
+surrounds the contents (even none), so a source in another layout is kept as it is.
 
 ## Conventions of the sample sources
 

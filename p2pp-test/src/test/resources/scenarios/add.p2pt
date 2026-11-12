@@ -45,7 +45,6 @@ unit U {
 }
 
 === add a concept at the start of a unit
-known-defect: P2PP-D-8
 --- source
 unit U {
 	concept A {
@@ -108,7 +107,6 @@ unit U {
 }
 
 === add a field at the end of the members
-known-defect: P2PP-D-9
 --- source
 unit U {
 	concept A {
@@ -126,7 +124,6 @@ unit U {
 }
 
 === add a field in an empty concept
-known-defect: P2PP-D-9
 --- source
 unit U {
 	concept A {
@@ -142,7 +139,6 @@ unit U {
 }
 
 === add a field at the start of the members
-known-defect: P2PP-D-8, P2PP-D-9
 --- source
 unit U {
 	concept A {
@@ -162,7 +158,6 @@ unit U {
 }
 
 === add a field in the middle of the members
-known-defect: P2PP-D-9
 --- source
 unit U {
 	concept A {
@@ -182,7 +177,6 @@ unit U {
 }
 
 === add a method without parameter, with one, with two
-known-defect: P2PP-D-9
 --- source
 unit U {
 	concept A {
@@ -202,7 +196,6 @@ unit U {
 }
 
 === add a member in a concept inside a commented source
-known-defect: P2PP-D-9
 --- source
 // header
 unit U {
@@ -262,7 +255,6 @@ unit U {
 }
 
 === add a parameter at the start of a method
-known-defect: P2PP-D-8
 --- source
 unit U {
 	concept A {
@@ -318,7 +310,6 @@ unit U {
 }
 
 === add an object and rename another in the same pretty-print
-known-defect: P2PP-D-9
 --- source
 unit U {
 	concept A {

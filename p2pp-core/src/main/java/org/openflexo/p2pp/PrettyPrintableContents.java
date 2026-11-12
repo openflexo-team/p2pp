@@ -311,6 +311,13 @@ public abstract class PrettyPrintableContents<N, T> {
 	public RawSourceFragment getPreludeFragment() {
 		if (preludeFragment == null && getFragment() != null && getFragment().getLength() > 0 && StringUtils.isNotEmpty(getPrelude())) {
 			preludeFragment = findUnmappedSegmentBackwardFrom(getPrelude(), getFragment().getStartPosition());
+			if (preludeFragment == null && !getPrelude().trim().isEmpty() && !getPrelude().trim().equals(getPrelude())) {
+				// The separator of the source may have other spaces around it ("a:int" for " : ")
+				preludeFragment = findUnmappedSegmentBackwardFrom(getPrelude().trim(), getFragment().getStartPosition());
+			}
+			if (preludeFragment == null) {
+				preludeFragment = whitespaceBefore(getPrelude(), getFragment());
+			}
 		}
 		return preludeFragment;
 	}
@@ -323,6 +330,12 @@ public abstract class PrettyPrintableContents<N, T> {
 	public RawSourceFragment getPostludeFragment() {
 		if (postludeFragment == null && getFragment() != null && getFragment().getLength() > 0 && StringUtils.isNotEmpty(getPostlude())) {
 			postludeFragment = findUnmappedSegmentForwardFrom(getPostlude(), getFragment().getEndPosition());
+			if (postludeFragment == null && !getPostlude().trim().isEmpty() && !getPostlude().trim().equals(getPostlude())) {
+				postludeFragment = findUnmappedSegmentForwardFrom(getPostlude().trim(), getFragment().getEndPosition());
+			}
+			if (postludeFragment == null) {
+				postludeFragment = whitespaceAfter(getPostlude(), getFragment());
+			}
 		}
 		return postludeFragment;
 	}
@@ -361,6 +374,48 @@ public abstract class PrettyPrintableContents<N, T> {
 			returned = returned.union(postludeFragment);
 		}
 		return returned;
+	}
+
+	// A source may use another layout than the canonical one. A prelude or a postlude is first looked for as it is declared. When it is
+	// only whitespace and is not found like that, the whitespace that actually surrounds the parsed contents, even none, is its parsed
+	// prelude or postlude: the canonical separator is then not written again (and the layout of the source is kept).
+
+	private static boolean isWhitespace(String s) {
+		return s != null && !s.isEmpty() && s.trim().isEmpty();
+	}
+
+	private static RawSourceFragment whitespaceBefore(String prelude, RawSourceFragment fragment) {
+		if (!isWhitespace(prelude) || fragment == null || fragment.getLength() == 0) {
+			return null;
+		}
+		RawSourcePosition end = fragment.getStartPosition();
+		RawSourcePosition start = end;
+		while (start.canDecrement()) {
+			RawSourcePosition previous = start.decrement();
+			Character c = previous.getCharAfter();
+			// A null char is a line end
+			if (c != null && !Character.isWhitespace(c)) {
+				break;
+			}
+			start = previous;
+		}
+		return fragment.getRawSource().makeFragment(start, end);
+	}
+
+	private static RawSourceFragment whitespaceAfter(String postlude, RawSourceFragment fragment) {
+		if (!isWhitespace(postlude) || fragment == null || fragment.getLength() == 0) {
+			return null;
+		}
+		RawSourcePosition start = fragment.getEndPosition();
+		RawSourcePosition end = start;
+		while (end.canIncrement()) {
+			Character c = end.getCharAfter();
+			if (c != null && !Character.isWhitespace(c)) {
+				break;
+			}
+			end = end.increment();
+		}
+		return fragment.getRawSource().makeFragment(start, end);
 	}
 
 	private RawSourceFragment findUnmappedSegmentBackwardFrom(String expected, RawSourcePosition position) {

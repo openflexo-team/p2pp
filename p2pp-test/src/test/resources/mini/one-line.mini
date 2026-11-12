@@ -1,2 +1,1 @@
-// p2pp-known-defect: P2PP-D-6
 unit Inline { concept A { field x : int; } }

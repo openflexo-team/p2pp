@@ -88,7 +88,6 @@ unit U {
 }
 
 === remove the first member
-known-defect: P2PP-D-9
 --- source
 unit U {
 	concept A {
@@ -108,7 +107,6 @@ unit U {
 }
 
 === remove a member in the middle
-known-defect: P2PP-D-9
 --- source
 unit U {
 	concept A {
@@ -128,7 +126,6 @@ unit U {
 }
 
 === remove the last member
-known-defect: P2PP-D-9
 --- source
 unit U {
 	concept A {
@@ -148,7 +145,6 @@ unit U {
 }
 
 === remove the only member
-known-defect: P2PP-D-9
 --- source
 unit U {
 	concept A {
@@ -164,7 +160,6 @@ unit U {
 }
 
 === remove a method with its parameters
-known-defect: P2PP-D-9
 --- source
 unit U {
 	concept A {
@@ -246,7 +241,6 @@ unit U {
 }
 
 === remove a member: its same-row comment goes with it, the comment on its own row stays
-known-defect: P2PP-D-9
 --- source
 unit U {
 	concept A {

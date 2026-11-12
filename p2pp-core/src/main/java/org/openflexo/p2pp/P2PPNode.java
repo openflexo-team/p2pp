@@ -242,11 +242,26 @@ public abstract class P2PPNode<N, T> {
 	 */
 	public final void initializePrettyPrint(P2PPNode<?, ?> rootNode, PrettyPrintContext context) {
 		preparePrettyPrint(getASTNode() != null);
+		refreshDefaultInsertionPoint();
 
 		for (PrettyPrintableContents<N, T> prettyPrintableContents : new ArrayList<>(ppContents)) {
 			prettyPrintableContents.initializePrettyPrint(rootNode, context.derive(prettyPrintableContents.getIndentation()));
 		}
 
+	}
+
+	/**
+	 * The default insertion point is the end of the last contents that was parsed, postlude included. It is computed once all the contents
+	 * are appended: a postlude is looked for in the source up to the first fragment mapped by a contents of this node, and a contents that is
+	 * not appended yet does not stop the search (a postlude "\n" would be found at the end of the source, after everything else).
+	 */
+	private void refreshDefaultInsertionPoint() {
+		for (PrettyPrintableContents<N, T> contents : new ArrayList<>(ppContents)) {
+			if (contents.getFragment() != null) {
+				RawSourceFragment postludeFragment = contents.getPostludeFragment();
+				defaultInsertionPoint = postludeFragment != null ? postludeFragment.getEndPosition() : contents.getFragment().getEndPosition();
+			}
+		}
 	}
 
 	/**
@@ -534,13 +549,9 @@ public abstract class P2PPNode<N, T> {
 		contents.setFragment(fragment);
 		ppContents.add(contents);
 		if (fragment != null) {
-			if (contents.getPostludeFragment() != null) {
-				// In this case, insertion point is after the postlude
-				defaultInsertionPoint = contents.getPostludeFragment().getEndPosition();
-			}
-			else {
-				defaultInsertionPoint = fragment.getEndPosition();
-			}
+			// The postlude is not looked for now: the contents that follow are not appended yet, and the search must stop at their
+			// fragments (see refreshDefaultInsertionPoint())
+			defaultInsertionPoint = fragment.getEndPosition();
 		}
 		return contents;
 	}
@@ -1082,6 +1093,14 @@ public abstract class P2PPNode<N, T> {
 			// Otherwise, look in children
 			for (P2PPNode<?, ?> child : getChildren()) {
 				if (child.isFragmentMapped(fragment)) {
+					return true;
+				}
+			}
+			// and in the tokens of this node itself (a closing brace that follows its last child, for example), which a search for the
+			// prelude or the postlude of a child must not cross
+			for (PrettyPrintableContents<N, T> contents : new ArrayList<>(ppContents)) {
+				if ((contents instanceof StaticContents || contents instanceof DynamicContents) && contents.getFragment() != null
+						&& contents.getFragment().getLength() > 0 && fragment.intersects(contents.getFragment())) {
 					return true;
 				}
 			}

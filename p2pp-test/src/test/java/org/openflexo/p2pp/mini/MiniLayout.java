@@ -26,6 +26,9 @@ final class MiniLayout {
 			if (row.trim().isEmpty()) {
 				continue;
 			}
+			if (row.chars().filter(ch -> ch == '{' || ch == '}').count() > 1) {
+				return "row " + rowNumber + " has several braces: [" + row.replace("\t", "→") + "]";
+			}
 			int expected = row.trim().startsWith("}") ? depth - 1 : depth;
 			int tabs = 0;
 			while (tabs < row.length() && row.charAt(tabs) == '\t') {
