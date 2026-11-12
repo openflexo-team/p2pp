@@ -115,6 +115,22 @@ For each child in the current model list, the code distinguishes:
 `ConditionalContents` remembers the condition value at parse time and handles four transitions: still true, true→false (remove the extended
 fragment), false→true (insert and remove any stale fragment), still false.
 
+#### Re-indentation: `Reindenter`
+
+`new Reindenter(rootNode).reindent(fromLine, toLine)` re-indents rows of a parsed text (P2PP-F-1). The depth of every token is the number of
+contents declared `Indent` around it, the nesting the normalized rendering indents with. A character is a *token* (in the fragment of a
+static or dynamic contents), a *separator* (non-blank text of an identified prelude or postlude), *trivia* (any other non-blank character: a
+comment) or *layout* (whitespace). Only the leading whitespace of rows is rewritten:
+
+- a row starting with a token or a separator gets the depth of that token;
+- a row starting with a comment gets the deepest depth between the tokens around it, the lists declared between them included, so that a
+  comment after `{`, before `}` or alone in an empty block belongs to the block; the comment rows that follow it, up to a blank row, keep
+  their indentation relative to it (the rows of a block comment);
+- a row starting inside a token spanning several rows (a string literal) is left as it is; a blank row is emptied.
+
+Depths come from the whole tree, so a portion gets the rows the whole text would get. The tree must describe the current text (no model change
+since the parse). The result is a list of row edits, a `DerivedRawSource`, or the text.
+
 ### Characteristics relevant for comparison
 
 - **No concrete syntax tree is retained.** The AST is used once to compute fragments. Afterwards the source of truth is *(source text,

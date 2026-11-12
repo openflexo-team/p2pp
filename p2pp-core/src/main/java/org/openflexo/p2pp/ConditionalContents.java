@@ -247,6 +247,13 @@ public class ConditionalContents<N, T> extends PrettyPrintableContents<N, T> {
 	private boolean initialCondition;
 	private RawSourceFragment initialExtendedFragment;
 
+	/**
+	 * The value of the condition when the pretty-print was initialized, i.e. which branch the parsed text holds
+	 */
+	public boolean isInitiallyTrue() {
+		return initialCondition;
+	}
+
 	@Override
 	public RawSourceFragment getFragment() {
 		if (conditionSupplier.get() && getThenContents() != null) {

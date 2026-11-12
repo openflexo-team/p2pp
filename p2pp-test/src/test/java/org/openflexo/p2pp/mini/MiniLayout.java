@@ -5,7 +5,7 @@ import java.util.regex.Pattern;
 /**
  * The canonical layout of Mini, which the edit matrix checks the derived text against.
  */
-final class MiniLayout {
+public final class MiniLayout {
 
 	private static final Pattern LINE_COMMENT = Pattern.compile("[ \t]*//[^\n]*");
 	private static final Pattern BLOCK_COMMENT = Pattern.compile("[ \t]*/\\*.*?\\*/", Pattern.DOTALL);
@@ -17,7 +17,7 @@ final class MiniLayout {
 	 * The first departure of a text from the canonical layout of Mini, or null: comments aside, one tab per level of braces in front of
 	 * a row (one less for a row starting with a closing brace), single spaces, no trailing space or tab.
 	 */
-	static String violation(String text) {
+	public static String violation(String text) {
 		String code = BLOCK_COMMENT.matcher(LINE_COMMENT.matcher(text).replaceAll("")).replaceAll("");
 		int depth = 0;
 		int rowNumber = 0;
