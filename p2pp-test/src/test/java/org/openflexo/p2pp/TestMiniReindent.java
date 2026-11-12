@@ -102,8 +102,8 @@ public class TestMiniReindent {
 	}
 
 	/**
-	 * Every row gets a random leading whitespace, except that a group of comment rows (consecutive rows starting with a comment, or inside a
-	 * block comment) is moved as a whole: that is what re-indentation preserves, since it cannot tell two line comments from a block comment
+	 * Every row gets a random leading whitespace, except that the rows inside a block comment are moved with the row it begins on (an
+	 * editor moving the comment as a whole)
 	 */
 	private static String scramble(String text, Random random) {
 		List<int[]> blocks = new ArrayList<>();
@@ -126,18 +126,17 @@ public class TestMiniReindent {
 					insideBlock = true;
 				}
 			}
-			boolean trivia = !stripped.isEmpty() && (insideBlock || stripped.startsWith("//") || stripped.startsWith("/*"));
 			String scrambled;
-			if (trivia && headOld != null && old.startsWith(headOld)) {
-				scrambled = headNew + old.substring(headOld.length());
+			if (insideBlock && headOld != null && old.startsWith(headOld)) {
+				scrambled = stripped.isEmpty() ? "" : headNew + old.substring(headOld.length());
 			}
 			else {
 				scrambled = PREFIXES[random.nextInt(PREFIXES.length)];
-				headOld = trivia ? old : null;
-				headNew = trivia ? scrambled : null;
-			}
-			if (!trivia) {
-				headOld = null;
+				if (!insideBlock) {
+					// the row a block comment may begin on
+					headOld = old;
+					headNew = scrambled;
+				}
 			}
 			sb.append(scrambled).append(stripped);
 			if (i < rows.length - 1) {
@@ -149,9 +148,12 @@ public class TestMiniReindent {
 	}
 
 	@Test
-	public void consecutiveCommentRowsKeepTheirRelativeIndentation() throws MiniParseException {
-		String source = String.join("\n", "unit U {", "// first", "  // deeper", "", "  // after a blank row", "}");
-		String expected = String.join("\n", "unit U {", "\t// first", "\t  // deeper", "", "\t// after a blank row", "}");
+	public void lineCommentsAreIndentedOneByOneAndBlockCommentsAsAWhole() throws MiniParseException {
+		String source = String.join("\n", "unit U {", "// first", "  // deeper", "concept A {", "  /* commented out:", "  concept B {",
+				"", "      field x;", "  }", "*/", "}", "}");
+		// the end of the block comment is less indented than its first row: left as it is
+		String expected = String.join("\n", "unit U {", "\t// first", "\t// deeper", "\tconcept A {", "\t\t/* commented out:",
+				"\t\tconcept B {", "", "\t\t    field x;", "\t\t}", "*/", "\t}", "}");
 		assertEquals(show(expected), show(reindent(source)));
 	}
 
@@ -250,14 +252,14 @@ public class TestMiniReindent {
 				"b : string);", //
 				"}", //
 				"}");
-		// a parameter starting a row is a token of the method: the depth of the method (Mini declares no indentation for parameters)
+		// a parameter starting a row continues the row of the method (no line break is declared before it): one level more
 		String expected = String.join("\n", //
 				"unit U {", //
 				"\t@first", //
 				"\t@second", //
 				"\tconcept A {", //
 				"\t\tmethod m(a : int,", //
-				"\t\tb : string);", //
+				"\t\t\tb : string);", //
 				"\t}", //
 				"}");
 		assertEquals(show(expected), show(reindent(source)));

@@ -108,6 +108,16 @@ public class ChildrenContents<PN, PT, CN, CT> extends PrettyPrintableContents<PN
 		return getNode();
 	}
 
+	/** The separator written before the first item instead of the prelude, null when it is the prelude */
+	public String getPreludeForFirstItem() {
+		return preludeForFirstItem;
+	}
+
+	/** The separator written after the last item instead of the postlude, null when it is the postlude */
+	public String getPostludeForLastItem() {
+		return postludeForLastItem;
+	}
+
 	public List<P2PPNode<CN, CT>> getChildrenNodes() {
 		return childrenNodes;
 	}

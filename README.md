@@ -119,17 +119,20 @@ fragment), false→true (insert and remove any stale fragment), still false.
 
 `new Reindenter(rootNode).reindent(fromLine, toLine)` re-indents rows of a parsed text (P2PP-F-1). The depth of every token is the number of
 contents declared `Indent` around it, the nesting the normalized rendering indents with. A character is a *token* (in the fragment of a
-static or dynamic contents), a *separator* (non-blank text of an identified prelude or postlude), *trivia* (any other non-blank character: a
-comment) or *layout* (whitespace). Only the leading whitespace of rows is rewritten:
+static or dynamic contents), a *separator* (non-blank text of an identified prelude or postlude), a *comment* (recognized outside tokens
+with a `CommentSyntax`, `//` and `/* */` by default) or *layout* (whitespace); anything else is text no node describes. Only the leading
+whitespace of rows is rewritten:
 
-- a row starting with a token or a separator gets the depth of that token;
-- a row starting with a comment gets the deepest depth between the tokens around it, the lists declared between them included, so that a
-  comment after `{`, before `}` or alone in an empty block belongs to the block; the comment rows that follow it, up to a blank row, keep
-  their indentation relative to it (the rows of a block comment);
-- a row starting inside a token spanning several rows (a string literal) is left as it is; a blank row is emptied.
+- a row starting with a token or a separator gets the depth of that token, one level more when no line break is declared before it in the
+  specification (preludes and postludes holding a line separator): the following rows of a statement written over several rows;
+- a row starting a comment gets the deepest depth between the tokens around it, the lists declared between them included, so that a
+  comment after `{`, before `}` or alone in an empty block belongs to the block;
+- a row inside a block comment moves with the row the comment began on, keeping its relative indentation (commented-out code);
+- a row starting inside a token spanning several rows, or with text no node describes, is left as it is; a blank row is emptied.
 
-Depths come from the whole tree, so a portion gets the rows the whole text would get. The tree must describe the current text (no model change
-since the parse). The result is a list of row edits, a `DerivedRawSource`, or the text.
+The indentation of a row depends on the whole tree, never on the rows around it (but the first row of its block comment), so a portion gets
+the rows the whole text would get. The tree must describe the current text (no model change since the parse). The result is a list of row
+edits, a `DerivedRawSource`, or the text; `explain(line)` tells what decides the indentation of a row.
 
 ### Characteristics relevant for comparison
 

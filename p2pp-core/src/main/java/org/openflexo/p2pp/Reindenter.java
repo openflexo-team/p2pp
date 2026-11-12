@@ -54,22 +54,64 @@ import org.openflexo.p2pp.RawSource.RawSourcePosition;
  * <ul>
  * <li>a <b>token</b>: inside the fragment of a static or dynamic contents;</li>
  * <li>a <b>separator</b>: the non-blank text of an identified prelude or postlude ({@code ,} {@code ;});</li>
- * <li><b>trivia</b>: anything else that is not whitespace, i.e. comments;</li>
- * <li><b>layout</b>: whitespace outside the tokens.</li>
+ * <li>a <b>comment</b>, recognized outside tokens with the {@link CommentSyntax} of the language;</li>
+ * <li><b>layout</b>: whitespace outside tokens and comments.</li>
  * </ul>
- * Only the leading whitespace of a row is ever rewritten, so that no token, comment or spacing inside a row changes and the text keeps its
- * meaning. A row whose first character is a token or a separator gets the depth of that token. A row starting with trivia (a comment) gets
- * the deepest depth found between the token before it and the token after it, the empty lists in between included: a comment after an
- * opening brace or before a closing one belongs to the block. The rows that follow it while no token starts a row keep their indentation
- * relative to it (the {@code  * } rows of a block comment), until a blank row. A row starting inside a token that spans several rows (a string literal, a
- * wrapped expression) is left untouched, its leading whitespace may be meaningful. A blank row is emptied.
+ * What is left is text no node describes (code the parser kept no node for).
  * <p>
- * The depths come from the whole tree, so that re-indenting a portion of the text gives the rows the whole text would have.
+ * Only the leading whitespace of a row is ever rewritten, so that no token, comment or spacing inside a row changes and the text keeps its
+ * meaning:
+ * <ul>
+ * <li>a row whose first character is a token or a separator gets the depth of that token, one level more when it continues the row before:
+ * when the specification declares no line break before that token (a statement written over several rows);</li>
+ * <li>a row starting a comment gets the deepest depth found between the token before it and the token after it, the empty lists in between
+ * included: a comment after an opening brace, before a closing one, or alone in an empty block belongs to the block;</li>
+ * <li>a row inside a block comment that began on an earlier row moves with the row the comment began on, keeping its indentation relative to
+ * it (the {@code  * } rows of a documentation comment, commented-out code); if it is less indented than that row, it is left as it is;</li>
+ * <li>a row starting inside a token spanning several rows (a string literal), or with text no node describes, is left as it is;</li>
+ * <li>a blank row is emptied.</li>
+ * </ul>
+ * The indentation of a row depends on the whole tree and on no other row but the one its block comment began on, so that re-indenting a
+ * portion of the text gives the rows the whole text would have.
  * <p>
  * The tree must describe the current text: the last parse, with no model change since. A client with pending changes prints the text first,
  * parses it again, then re-indents.
  */
 public class Reindenter {
+
+	/**
+	 * How comments are written in the language: a line comment prefix and the delimiters of a block comment (any may be null)
+	 */
+	public static class CommentSyntax {
+		/** {@code // ...} and {@code /* ... *&#47;}, the syntax of FML, of B and of Mini */
+		public static final CommentSyntax C_STYLE = new CommentSyntax("//", "/*", "*/");
+
+		private final String lineComment;
+		private final String blockStart;
+		private final String blockEnd;
+
+		public CommentSyntax(String lineComment, String blockStart, String blockEnd) {
+			this.lineComment = lineComment;
+			this.blockStart = blockStart;
+			this.blockEnd = blockEnd;
+		}
+	}
+
+	/** A comment of the text: from its start to its end (excluded) */
+	private static class Comment {
+		private final RawSourcePosition start;
+		private final RawSourcePosition end;
+
+		Comment(RawSourcePosition start, RawSourcePosition end) {
+			this.start = start;
+			this.end = end;
+		}
+
+		@Override
+		public String toString() {
+			return "comment " + start + "-" + end;
+		}
+	}
 
 	/**
 	 * The indentation a row receives
@@ -113,11 +155,23 @@ public class Reindenter {
 		private final RawSourceFragment fragment;
 		private final int depth;
 		private final int order;
+		private final Object owner;
+		// true when the specification declares a line break between the previous anchor and this one: otherwise a row starting with this
+		// anchor continues the row before
+		private final boolean breakBefore;
 
-		Anchor(RawSourceFragment fragment, int depth, int order) {
+		Anchor(RawSourceFragment fragment, int depth, int order, Object owner, boolean breakBefore) {
 			this.fragment = fragment;
 			this.depth = depth;
 			this.order = order;
+			this.owner = owner;
+			this.breakBefore = breakBefore;
+		}
+
+		@Override
+		public String toString() {
+			return (fragment != null ? fragment + " [" + fragment.getRawText().replace("\n", "\\n") + "]" : "list") + " depth=" + depth
+					+ (breakBefore ? "" : " (continuation)") + " of " + owner;
 		}
 
 		RawSourcePosition start() {
@@ -133,15 +187,23 @@ public class Reindenter {
 	private final String unit;
 	private final List<Anchor> inOrder = new ArrayList<>();
 	private final List<Anchor> positioned = new ArrayList<>();
+	private final List<Comment> comments = new ArrayList<>();
 
 	/**
-	 * A re-indenter indenting with the unit of the pretty-print context of the root node
+	 * A re-indenter for a language with C-style comments, indenting with the unit of the pretty-print context of the root node
 	 */
 	public Reindenter(P2PPNode<?, ?> rootNode) {
 		this(rootNode, rootNode.makePrettyPrintContext().derive(Indentation.Indent).getResultingIndentation());
 	}
 
+	/**
+	 * A re-indenter for a language with C-style comments
+	 */
 	public Reindenter(P2PPNode<?, ?> rootNode, String unit) {
+		this(rootNode, unit, CommentSyntax.C_STYLE);
+	}
+
+	public Reindenter(P2PPNode<?, ?> rootNode, String unit, CommentSyntax commentSyntax) {
 		this.rawSource = rootNode.getRawSource();
 		this.unit = unit;
 		visitNode(rootNode, 0);
@@ -151,6 +213,7 @@ public class Reindenter {
 			}
 		}
 		Collections.sort(positioned, (a1, a2) -> a1.start().compareTo(a2.start()));
+		findComments(commentSyntax);
 	}
 
 	public RawSource getRawSource() {
@@ -165,26 +228,67 @@ public class Reindenter {
 	// The anchor map
 	// ---------------------------------------------------------------------------------------------------------------------------------
 
-	private void record(RawSourceFragment fragment, int depth) {
-		inOrder.add(new Anchor(fragment, depth, inOrder.size()));
+	// a line break is declared since the last anchor recorded (the start of the text is one)
+	private boolean pendingBreak = true;
+
+	private void record(RawSourceFragment fragment, int depth, Object owner) {
+		if (fragment == null) {
+			// a list: where its children go, it breaks nothing
+			inOrder.add(new Anchor(null, depth, inOrder.size(), owner, false));
+			return;
+		}
+		inOrder.add(new Anchor(fragment, depth, inOrder.size(), owner, pendingBreak));
+		// a token spanning several rows ends on a row of its own
+		pendingBreak = fragment.getRawText().contains("\n");
 	}
 
-	private void recordSeparator(RawSourceFragment fragment, int depth) {
+	private void recordSeparator(RawSourceFragment fragment, int depth, Object owner) {
 		if (fragment != null && fragment.getLength() > 0 && !fragment.getRawText().trim().isEmpty()) {
-			record(fragment, depth);
+			record(fragment, depth, owner);
+		}
+	}
+
+	/**
+	 * A prelude or a postlude of the specification, with the fragment the source has for it: its line breaks before and after its non-blank
+	 * part are declared breaks
+	 */
+	private void recordSeparator(String separator, RawSourceFragment fragment, int depth, Object owner) {
+		if (separator == null || separator.isEmpty()) {
+			recordSeparator(fragment, depth, owner);
+			return;
+		}
+		String trimmed = separator.trim();
+		if (trimmed.isEmpty()) {
+			if (separator.indexOf('\n') >= 0) {
+				pendingBreak = true;
+			}
+			return;
+		}
+		int first = separator.indexOf(trimmed);
+		if (separator.substring(0, first).indexOf('\n') >= 0) {
+			pendingBreak = true;
+		}
+		recordSeparator(fragment, depth, owner);
+		if (separator.substring(first + trimmed.length()).indexOf('\n') >= 0) {
+			pendingBreak = true;
 		}
 	}
 
 	private void visitNode(P2PPNode<?, ?> node, int depth) {
+		visitNode(node, depth, null, null);
+	}
+
+	/** A node, with the prelude and postlude its parent writes around it */
+	private void visitNode(P2PPNode<?, ?> node, int depth, String prelude, String postlude) {
 		if (node == null || node.getASTNode() == null) {
 			// not parsed: it has no text yet
 			return;
 		}
-		recordSeparator(node.getPrelude(), depth);
+		recordSeparator(prelude, node.getPrelude(), depth, node);
 		for (PrettyPrintableContents<?, ?> contents : new ArrayList<>(node.getPPContents())) {
 			visitContents(contents, depth);
 		}
-		recordSeparator(node.getPostlude(), depth);
+		recordSeparator(postlude, node.getPostlude(), depth, node);
 	}
 
 	private void visitContents(PrettyPrintableContents<?, ?> contents, int depth) {
@@ -195,24 +299,32 @@ public class Reindenter {
 		if (contents instanceof StaticContents || contents instanceof DynamicContents) {
 			RawSourceFragment fragment = contents.getFragment();
 			if (fragment != null && fragment.getLength() > 0) {
-				recordSeparator(contents.getPreludeFragment(), d);
-				record(fragment, d);
-				recordSeparator(contents.getPostludeFragment(), d);
+				recordSeparator(contents.getPrelude(), contents.getPreludeFragment(), d, contents);
+				record(fragment, d, contents);
+				recordSeparator(contents.getPostlude(), contents.getPostludeFragment(), d, contents);
 			}
 		}
 		else if (contents instanceof ChildContents) {
 			// where the child goes, even when there is none
-			record(null, d);
-			visitNode(((ChildContents<?, ?, ?, ?>) contents).getParsedChildNode(), d);
+			record(null, d, contents);
+			visitNode(((ChildContents<?, ?, ?, ?>) contents).getParsedChildNode(), d, contents.getPrelude(), contents.getPostlude());
 		}
 		else if (contents instanceof ChildrenContents) {
 			// where the children go, even when there is none (a comment alone in an empty block)
-			record(null, d);
+			record(null, d, contents);
 			// the parsed children, in the order of the source, are those registered for this contents at initialization
+			ChildrenContents<?, ?, ?, ?> list = (ChildrenContents<?, ?, ?, ?>) contents;
+			List<P2PPNode<?, ?>> items = new ArrayList<>();
 			for (P2PPNode<?, ?> child : new ArrayList<>(contents.getNode().getChildren())) {
 				if (child.getRegisteredForContents() == contents) {
-					visitNode(child, d);
+					items.add(child);
 				}
+			}
+			for (int i = 0; i < items.size(); i++) {
+				String prelude = i == 0 && list.getPreludeForFirstItem() != null ? list.getPreludeForFirstItem() : list.getPrelude();
+				String postlude = i == items.size() - 1 && list.getPostludeForLastItem() != null ? list.getPostludeForLastItem()
+						: list.getPostlude();
+				visitNode(items.get(i), d, prelude, postlude);
 			}
 		}
 		else if (contents instanceof SequentialContents) {
@@ -225,6 +337,71 @@ public class Reindenter {
 			ConditionalContents<?, ?> conditional = (ConditionalContents<?, ?>) contents;
 			visitContents(conditional.isInitiallyTrue() ? conditional.getThenContents() : conditional.getElseContents(), d);
 		}
+	}
+
+	// ---------------------------------------------------------------------------------------------------------------------------------
+	// The comments
+	// ---------------------------------------------------------------------------------------------------------------------------------
+
+	private RawSourcePosition at(int line, int pos) {
+		return rawSource.makePositionAfterChar(line, pos);
+	}
+
+	private static boolean startsWith(String row, String prefix, int at) {
+		return prefix != null && !prefix.isEmpty() && row.startsWith(prefix, at);
+	}
+
+	/** Find the comments of the text, outside the tokens (a {@code //} in a string literal is not a comment) */
+	private void findComments(CommentSyntax syntax) {
+		RawSourcePosition blockStart = null;
+		for (int line = 1; line <= rawSource.size(); line++) {
+			String row = rawSource.getRow(line - 1);
+			int c = 0;
+			while (c < row.length()) {
+				if (blockStart != null) {
+					int close = row.indexOf(syntax.blockEnd, c);
+					if (close < 0) {
+						break;
+					}
+					c = close + syntax.blockEnd.length();
+					comments.add(new Comment(blockStart, at(line, c)));
+					blockStart = null;
+				}
+				else if (startsWith(row, syntax.lineComment, c) && anchorAt(at(line, c)) == null) {
+					comments.add(new Comment(at(line, c), at(line, row.length())));
+					break;
+				}
+				else if (startsWith(row, syntax.blockStart, c) && syntax.blockEnd != null && anchorAt(at(line, c)) == null) {
+					blockStart = at(line, c);
+					c += syntax.blockStart.length();
+				}
+				else {
+					c++;
+				}
+			}
+		}
+		if (blockStart != null) {
+			// not closed: up to the end of the text
+			comments.add(new Comment(blockStart, rawSource.getEndPosition()));
+		}
+	}
+
+	/** The comment containing the position (start included, end excluded), null if none */
+	private Comment commentAt(RawSourcePosition p) {
+		int low = 0;
+		int high = comments.size() - 1;
+		int found = -1;
+		while (low <= high) {
+			int mid = (low + high) >>> 1;
+			if (comments.get(mid).start.compareTo(p) <= 0) {
+				found = mid;
+				low = mid + 1;
+			}
+			else {
+				high = mid - 1;
+			}
+		}
+		return found >= 0 && comments.get(found).end.compareTo(p) > 0 ? comments.get(found) : null;
 	}
 
 	// ---------------------------------------------------------------------------------------------------------------------------------
@@ -271,7 +448,7 @@ public class Reindenter {
 	}
 
 	/**
-	 * Depth of trivia at a position that no anchor covers: the deepest of the anchors around it, the lists declared between them included
+	 * Depth of a comment starting at a position that no anchor covers: the deepest of the anchors around it, the lists declared between them included
 	 */
 	private int triviaDepth(RawSourcePosition p) {
 		int i = lastStartingAtOrBefore(p);
@@ -314,11 +491,69 @@ public class Reindenter {
 	// Re-indenting
 	// ---------------------------------------------------------------------------------------------------------------------------------
 
-	/** True when the row starts with trivia: not blank, not inside a token, its first character in no anchor */
-	private boolean isTriviaRow(int line) {
+	/**
+	 * What decides the indentation of a row, for diagnostics: the anchor its first character is in, the comment, or nothing
+	 */
+	public String explain(int line) {
 		String row = rawSource.getRow(line - 1);
 		int k = leadingWhitespace(row);
-		return k < row.length() && !startsInsideToken(line) && anchorAt(rawSource.makePositionAfterChar(line, k)) == null;
+		String prefix = "row " + line + " [" + newIndentation(line).replace("\t", "\\t") + "]: ";
+		if (startsInsideToken(line)) {
+			return prefix + "inside a token spanning several rows, left as it is";
+		}
+		if (k == row.length()) {
+			return prefix + "blank";
+		}
+		RawSourcePosition p = at(line, k);
+		Anchor anchor = anchorAt(p);
+		if (anchor != null) {
+			return prefix + anchor;
+		}
+		Comment comment = commentAt(p);
+		if (comment != null) {
+			if (!comment.start.equals(p)) {
+				return prefix + "inside the " + comment + ", moved with row " + comment.start.getLine();
+			}
+			int i = lastStartingAtOrBefore(p);
+			return prefix + comment + ", depth " + triviaDepth(p) + " between " + (i >= 0 ? positioned.get(i) : "start") + " and "
+					+ (i + 1 < positioned.size() ? positioned.get(i + 1) : "end");
+		}
+		return prefix + "text that no node describes, left as it is";
+	}
+
+	/** The indentation a row must have; for a row left as it is, its own */
+	private String newIndentation(int line) {
+		String row = rawSource.getRow(line - 1);
+		int k = leadingWhitespace(row);
+		String oldIndentation = row.substring(0, k);
+		if (startsInsideToken(line)) {
+			return oldIndentation;
+		}
+		if (k == row.length()) {
+			return "";
+		}
+		RawSourcePosition p = at(line, k);
+		Anchor anchor = anchorAt(p);
+		if (anchor != null) {
+			// a row that continues the one before (a statement written over several rows) is indented one level more
+			return indentation(anchor.breakBefore ? anchor.depth : anchor.depth + 1);
+		}
+		Comment comment = commentAt(p);
+		if (comment == null) {
+			// text that no node describes: its depth is unknown
+			return oldIndentation;
+		}
+		if (comment.start.equals(p)) {
+			return indentation(triviaDepth(p));
+		}
+		// inside a block comment begun on an earlier row: it moves with that row
+		int headLine = comment.start.getLine();
+		String headRow = rawSource.getRow(headLine - 1);
+		String headOld = headRow.substring(0, leadingWhitespace(headRow));
+		if (!oldIndentation.startsWith(headOld)) {
+			return oldIndentation;
+		}
+		return newIndentation(headLine) + oldIndentation.substring(headOld.length());
 	}
 
 	/**
@@ -326,47 +561,11 @@ public class Reindenter {
 	 */
 	public List<RowIndentation> computeIndentations(int fromLine, int toLine) {
 		List<RowIndentation> returned = new ArrayList<>();
-		int first = Math.max(1, fromLine);
-		int last = Math.min(rawSource.size(), toLine);
-		// a portion starting inside a run of comment rows starts at the head of that run, so that its rows get what the whole text gives them
-		int start = first;
-		while (start > 1 && isTriviaRow(start - 1)) {
-			start--;
-		}
-		// the comment that the rows starting with trivia follow, as long as no token starts a row: its old and new indentation
-		String runOldIndentation = null;
-		String runNewIndentation = null;
-		for (int line = start; line <= last; line++) {
+		for (int line = Math.max(1, fromLine); line <= Math.min(rawSource.size(), toLine); line++) {
 			String row = rawSource.getRow(line - 1);
 			int k = leadingWhitespace(row);
-			String oldIndentation = row.substring(0, k);
-			if (startsInsideToken(line)) {
-				continue;
-			}
-			String newIndentation;
-			if (k == row.length()) {
-				// blank row: it ends a run of comment rows (two comments apart are not moved together)
-				newIndentation = "";
-				runOldIndentation = null;
-				runNewIndentation = null;
-			}
-			else {
-				Anchor anchor = anchorAt(rawSource.makePositionAfterChar(line, k));
-				if (anchor != null) {
-					newIndentation = indentation(anchor.depth);
-					runOldIndentation = null;
-					runNewIndentation = null;
-				}
-				else if (runOldIndentation != null && oldIndentation.startsWith(runOldIndentation)) {
-					newIndentation = runNewIndentation + oldIndentation.substring(runOldIndentation.length());
-				}
-				else {
-					newIndentation = indentation(triviaDepth(rawSource.makePositionAfterChar(line, k)));
-					runOldIndentation = oldIndentation;
-					runNewIndentation = newIndentation;
-				}
-			}
-			if (line >= first && !newIndentation.equals(oldIndentation)) {
+			String newIndentation = newIndentation(line);
+			if (!newIndentation.equals(row.substring(0, k))) {
 				returned.add(new RowIndentation(line, k, newIndentation));
 			}
 		}
