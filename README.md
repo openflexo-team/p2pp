@@ -117,6 +117,8 @@ fragment), false→true (insert and remove any stale fragment), still false.
 
 #### Re-indentation: `Reindenter`
 
+The approach and the algorithm are described in [REINDENTATION.md](REINDENTATION.md).
+
 `new Reindenter(rootNode).reindent(fromLine, toLine)` re-indents rows of a parsed text (P2PP-F-1). The depth of every token is the number of
 contents declared `Indent` around it, the nesting the normalized rendering indents with. A character is a *token* (in the fragment of a
 static or dynamic contents), a *separator* (non-blank text of an identified prelude or postlude), a *comment* or *layout* (whitespace);
