@@ -27,7 +27,8 @@ unit U {
 
 ```
 unit      ::= "unit" ID "{" concept* "}"                 -- end of source right after
-concept   ::= [ "abstract" ] "concept" ID [ "extends" ID ] "{" member* "}"
+concept   ::= annotation* [ "abstract" ] "concept" ID [ "extends" ID ] "{" member* "}"
+annotation ::= "@" ID                                      -- on a row of its own, before the concept
 member    ::= field | method
 field     ::= ( "field" | "const" ) ID [ ":" ID ] ";"
 method    ::= "method" ID "(" [ param { "," param } ] ")" ";"
@@ -35,7 +36,7 @@ param     ::= ID [ ":" ID ]
 
 ID          ::= (letter | "_") (letter | digit | "_")*   -- not a keyword
 keywords    ::= unit abstract concept extends field const method
-punctuation ::= { } ( ) : ; ,
+punctuation ::= { } ( ) : ; , @
 ignored     ::= whitespace, "// ...", "/* ... */" (a block comment may span several rows)
 ```
 
@@ -46,7 +47,8 @@ character or text after the unit is a syntax error, located by line and column.
 
 ```
 Unit     (name, concepts : Concept*)
-Concept  (name, isAbstract : bool, parentName : String?, members : Member*)
+Concept  (name, isAbstract : bool, parentName : String?, annotations : Annotation*, members : Member*)
+Annotation (name)
 Member   = Field | Method
 Field    (name, isConst : bool, type : TypeRef?)
 Method   (name, params : Param*)
@@ -61,6 +63,7 @@ parent of a concept is a name, not a reference. They exercise the single-child c
 
 | Construct | Contents | Declared separators |
 |---|---|---|
+| annotations of a concept | children, not indented by the list, one per row: the first contents of a concept, written before its header (the node starts where its first annotation does) | `⏎` after each |
 | `unit`, `concept`, `field`, `method`, `extends`, `abstract`, `{ } ( ) : ;` | static | `unit␣`, `␣{⏎`, `␣:␣`, `⏎}`... |
 | names (unit, concept, member, parameter, parent, parameter type) | dynamic | none |
 | `abstract` | conditional (`isAbstract`) | `␣` after |
@@ -121,6 +124,7 @@ order, to the model only, then the document is pretty-printed once. They are wri
 | `add concept NAME [abstract] [extends P] [at N]` | add a concept to the unit |
 | `add field CONCEPT NAME : TYPE [at N]`, `add method CONCEPT NAME ( [p : T, ...] ) [at N]` | add a member |
 | `add param PATH NAME : TYPE [at N]` | add a parameter to a method |
+| `add annotation CONCEPT NAME [at N]`, `remove annotation CONCEPT NAME` | annotations of a concept |
 | `remove PATH`, `move PATH to N` | remove, or reorder inside its list |
 
 A PATH is `unit`, `A` (a concept), `A.x` (a member) or `A.m.p` (a parameter). Indexes start at 0; without `at`, the element goes last.

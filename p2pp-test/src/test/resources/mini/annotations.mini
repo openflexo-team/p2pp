@@ -1,0 +1,12 @@
+unit Annotated {
+	@first
+	@second
+	concept A {
+		field x : int;
+	}
+	concept B {
+	}
+	@last
+	abstract concept C extends A {
+	}
+}

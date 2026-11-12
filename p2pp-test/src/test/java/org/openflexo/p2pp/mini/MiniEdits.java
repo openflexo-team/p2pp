@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.openflexo.p2pp.mini.MiniModel.Annotation;
 import org.openflexo.p2pp.mini.MiniModel.Concept;
 import org.openflexo.p2pp.mini.MiniModel.Field;
 import org.openflexo.p2pp.mini.MiniModel.Member;
@@ -25,6 +26,8 @@ import org.openflexo.p2pp.mini.MiniModel.Unit;
  * replace type PATH TYPE                (a field gets a NEW type object, instead of renaming its type)
  * set const PATH true|false             (a field is written with 'const' instead of 'field')
  * add concept NAME [abstract] [extends PARENT] [at N]
+ * add annotation CONCEPT NAME [at N]  (written before the concept, one per row)
+ * remove annotation CONCEPT NAME
  * add field CONCEPT NAME : TYPE [at N]
  * add method CONCEPT NAME ( [p : T, ...] ) [at N]
  * add param PATH NAME : TYPE [at N]
@@ -45,6 +48,8 @@ public final class MiniEdits {
 	private static final Pattern SET_ABSTRACT = Pattern.compile("set abstract " + ID + " (true|false)");
 	private static final Pattern SET_PARENT = Pattern.compile("set parent " + ID + " " + ID);
 	private static final Pattern SET_TYPE = Pattern.compile("set type " + PATH + " " + ID);
+	private static final Pattern ADD_ANNOTATION = Pattern.compile("add annotation " + ID + " " + ID + AT);
+	private static final Pattern REMOVE_ANNOTATION = Pattern.compile("remove annotation " + ID + " " + ID);
 	private static final Pattern SET_CONST = Pattern.compile("set const " + PATH + " (true|false)");
 	private static final Pattern REPLACE_TYPE = Pattern.compile("replace type " + PATH + " " + ID);
 	private static final Pattern ADD_CONCEPT = Pattern.compile("add concept " + ID + "( abstract)?(?: extends " + ID + ")?" + AT);
@@ -109,6 +114,21 @@ public final class MiniEdits {
 				throw new IllegalArgumentException("'" + m.group(1) + "' is not a field");
 			}
 			((Field) target).setType(new TypeRef(m.group(2)));
+		}
+		else if ((m = ADD_ANNOTATION.matcher(command)).matches()) {
+			insert(concept(unit, m.group(1)).getAnnotations(), new Annotation(m.group(2)), m.group(3));
+		}
+		else if ((m = REMOVE_ANNOTATION.matcher(command)).matches()) {
+			List<Annotation> annotations = concept(unit, m.group(1)).getAnnotations();
+			Annotation found = null;
+			for (Annotation a : annotations) {
+				if (a.getName().equals(m.group(2))) {
+					found = a;
+				}
+			}
+			if (found == null || !annotations.remove(found)) {
+				throw new IllegalArgumentException("No annotation '" + m.group(2) + "' on " + m.group(1));
+			}
 		}
 		else if ((m = SET_CONST.matcher(command)).matches()) {
 			Object target = resolve(unit, m.group(1));

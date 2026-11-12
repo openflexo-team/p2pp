@@ -7,6 +7,7 @@ import org.openflexo.p2pp.RawSource;
 import org.openflexo.p2pp.RawSource.RawSourceFragment;
 import org.openflexo.p2pp.RawSource.RawSourcePosition;
 import org.openflexo.p2pp.SequentialContents;
+import org.openflexo.p2pp.mini.MiniModel.Annotation;
 import org.openflexo.p2pp.mini.MiniModel.Concept;
 import org.openflexo.p2pp.mini.MiniModel.Field;
 import org.openflexo.p2pp.mini.MiniModel.Member;
@@ -72,6 +73,9 @@ public final class MiniNodes {
 			if (object instanceof Concept) {
 				returned = new MiniConceptNode((Concept) object, rawSource);
 			}
+			else if (object instanceof Annotation) {
+				returned = new MiniAnnotationNode((Annotation) object, rawSource);
+			}
 			else if (object instanceof Field) {
 				returned = new MiniFieldNode((Field) object, rawSource);
 			}
@@ -99,6 +103,9 @@ public final class MiniNodes {
 					break;
 				case "concept":
 					node = new MiniConceptNode(ast, rawSource);
+					break;
+				case "annotation":
+					node = new MiniAnnotationNode(ast, rawSource);
 					break;
 				case "field":
 					node = new MiniFieldNode(ast, rawSource);
@@ -197,6 +204,9 @@ public final class MiniNodes {
 		@Override
 		protected void preparePrettyPrint(boolean hasParsedVersion) {
 			super.preparePrettyPrint(hasParsedVersion);
+			// The annotations come first, each on a row of its own, before the header of the concept, and they are not indented by the list
+			// (the concept itself is): the first contents of a node, whose first token is where an insertion lands
+			append(childrenContents("", () -> getModelObject().getAnnotations(), LINE_SEPARATOR, Indentation.DoNotIndent, Annotation.class));
 			when(() -> getModelObject().isAbstract(), "abstract").thenAppend(staticContents("", "abstract", " "), frag("abstract"));
 			append(staticContents("", "concept", " "), frag("kw"));
 			append(dynamicContents(() -> getModelObject().getName()), frag("name"));
@@ -205,6 +215,36 @@ public final class MiniNodes {
 			append(staticContents(" ", "{", LINE_SEPARATOR), frag("open"));
 			append(childrenContents("", () -> getModelObject().getMembers(), LINE_SEPARATOR, Indentation.Indent, Member.class));
 			append(staticContents("", "}", ""), frag("close"));
+		}
+	}
+
+	public static class MiniAnnotationNode extends MiniNode<Annotation> {
+
+		public MiniAnnotationNode(MiniAst ast, RawSource rawSource) {
+			super(ast, rawSource);
+		}
+
+		public MiniAnnotationNode(Annotation annotation, RawSource rawSource) {
+			super(annotation, rawSource);
+			preparePrettyPrint(false);
+		}
+
+		@Override
+		public Annotation buildModelObjectFromAST(MiniAst ast) {
+			return new Annotation(ast.text("name"));
+		}
+
+		@Override
+		public MiniAnnotationNode deserialize() {
+			((MiniConceptNode) getParent()).getModelObject().getAnnotations().add(getModelObject());
+			return this;
+		}
+
+		@Override
+		protected void preparePrettyPrint(boolean hasParsedVersion) {
+			super.preparePrettyPrint(hasParsedVersion);
+			append(staticContents("", "@", ""), frag("at"));
+			append(dynamicContents(() -> getModelObject().getName()), frag("name"));
 		}
 	}
 

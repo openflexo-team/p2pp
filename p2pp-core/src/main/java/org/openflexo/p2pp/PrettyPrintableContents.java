@@ -239,6 +239,9 @@ public abstract class PrettyPrintableContents<N, T> {
 			}
 			else {
 				// Otherwise delegate computation of insertion point to the previous contents (until an existing content is found)
+				if (getPreviousContents() instanceof ChildrenContents) {
+					return ((ChildrenContents<?, ?, ?, ?>) getPreviousContents()).insertionPointForFollowingContents();
+				}
 				return getPreviousContents().getInsertionPoint();
 			}
 		}

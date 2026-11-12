@@ -47,6 +47,7 @@ import java.util.logging.Logger;
 
 import org.openflexo.connie.type.TypeUtils;
 import org.openflexo.p2pp.PrettyPrintContext.Indentation;
+import org.openflexo.p2pp.RawSource.RawSourceFragment;
 import org.openflexo.p2pp.RawSource.RawSourcePosition;
 import org.openflexo.toolbox.StringUtils;
 
@@ -237,7 +238,7 @@ public class ChildrenContents<PN, PT, CN, CT> extends PrettyPrintableContents<PN
 			}
 		}
 		int parsedIndex = 0;
-		String indentString = getIndentation() == Indentation.Indent ? computeIndentString(slots, derivedContext) : null;
+		String indentString = isRowStyle() ? computeIndentString(slots, derivedContext) : null;
 
 		// New children before the first parsed one: they go before it, not after the last parsed one
 		int firstParsed = 0;
@@ -279,16 +280,16 @@ public class ChildrenContents<PN, PT, CN, CT> extends PrettyPrintableContents<PN
 
 				if (handleSpecificPrelude) {
 					if (handleSpecificPostlude) {
-						String insertThis = applicablePrelude + newChildText(childNode, derivedContext, indentString) + applicablePostlude;
+						String insertThis = applicablePrelude + newChildText(childNode, derivedContext, indentString, insertionPoint) + applicablePostlude;
 						if (DEBUG)
 							System.out.println("Case 1: Inserting in " + insertionPoint + " value=[" + insertThis + "]");
-						derivedRawSource.insert(insertionPoint, insertThis);
+						derivedRawSource.insert(insertionPoint, keepLineIndentation(insertionPoint, insertThis));
 					}
 					else {
-						String insertThis = applicablePrelude + newChildText(childNode, derivedContext, indentString) + applicablePostlude;
+						String insertThis = applicablePrelude + newChildText(childNode, derivedContext, indentString, insertionPoint) + applicablePostlude;
 						if (DEBUG)
 							System.out.println("Case 2: Inserting in " + insertionPoint + " value=[" + insertThis + "]");
-						derivedRawSource.insert(insertionPoint, insertThis);
+						derivedRawSource.insert(insertionPoint, keepLineIndentation(insertionPoint, insertThis));
 					}
 				}
 				else {
@@ -314,17 +315,18 @@ public class ChildrenContents<PN, PT, CN, CT> extends PrettyPrintableContents<PN
 								}
 							}
 						}
-						insertThis = insertThis + applicablePrelude + newChildText(childNode, derivedContext, indentString)
+						insertThis = insertThis + applicablePrelude + newChildText(childNode, derivedContext, indentString, insertThisAt)
 								+ (lastParsedNodes.size() > 0 ? "" : applicablePostlude);
 						if (DEBUG)
 							System.out.println("Case 3: Inserting in " + insertThisAt + " value=[" + insertThis + "]");
-						derivedRawSource.insert(insertThisAt, insertThis);
+						derivedRawSource.insert(insertThisAt, keepLineIndentation(insertThisAt, insertThis));
 					}
 					else {
-						String insertThis = applicablePrelude + newChildText(childNode, derivedContext, indentString) + applicablePostlude;
+						String insertThis = applicablePrelude + newChildText(childNode, derivedContext, indentString, insertionPointAfterPostlude)
+								+ applicablePostlude;
 						if (DEBUG)
 							System.out.println("Case 4: Inserting in " + insertionPoint + " value=[" + insertThis + "]");
-						derivedRawSource.insert(insertionPointAfterPostlude, insertThis);
+						derivedRawSource.insert(insertionPointAfterPostlude, keepLineIndentation(insertionPointAfterPostlude, insertThis));
 					}
 				}
 
@@ -363,13 +365,13 @@ public class ChildrenContents<PN, PT, CN, CT> extends PrettyPrintableContents<PN
 				if (removedNode.getPostlude() != null) {
 					endPosition = removedNode.getPostlude().getEndPosition();
 				}
-				derivedRawSource.remove(startPosition.getOuterType().makeFragment(startPosition, endPosition));
+				removeChild(derivedRawSource, startPosition, endPosition);
 			}
 			else if (wasFirst) {
 				// The first item has a prelude of its own, other than the one of the others (even an empty one: "" for "(a, b)"): the item
 				// that becomes the first one takes it, so the prelude it had as a following item goes
 				if (preludeForFirstItem != null && !preludeForFirstItem.equals(getPrelude()) && childrenObjectsList.size() > 0) {
-					derivedRawSource.remove(startPosition.getOuterType().makeFragment(startPosition, endPosition));
+					removeChild(derivedRawSource, startPosition, endPosition);
 					P2PPNode<?, CT> newFirstNode = getParentNode().getObjectNode(childrenObjectsList.get(0));
 					if (newFirstNode.getPrelude() != null) {
 						derivedRawSource.remove(newFirstNode.getPrelude());
@@ -382,13 +384,13 @@ public class ChildrenContents<PN, PT, CN, CT> extends PrettyPrintableContents<PN
 					if (removedNode.getPostlude() != null) {
 						endPosition = removedNode.getPostlude().getEndPosition();
 					}
-					derivedRawSource.remove(startPosition.getOuterType().makeFragment(startPosition, endPosition));
+					removeChild(derivedRawSource, startPosition, endPosition);
 				}
 			}
 			else if (wasLast) {
 				// Same for the last item, whose postlude is not the one of the others ("" for "a; b; c")
 				if (postludeForLastItem != null && !postludeForLastItem.equals(getPostlude()) && childrenObjectsList.size() > 0) {
-					derivedRawSource.remove(startPosition.getOuterType().makeFragment(startPosition, endPosition));
+					removeChild(derivedRawSource, startPosition, endPosition);
 					P2PPNode<?, CT> newLastNode = getParentNode().getObjectNode(childrenObjectsList.get(childrenObjectsList.size() - 1));
 					if (newLastNode.getPostlude() != null) {
 						derivedRawSource.remove(newLastNode.getPostlude());
@@ -401,7 +403,7 @@ public class ChildrenContents<PN, PT, CN, CT> extends PrettyPrintableContents<PN
 					if (removedNode.getPostlude() != null) {
 						endPosition = removedNode.getPostlude().getEndPosition();
 					}
-					derivedRawSource.remove(startPosition.getOuterType().makeFragment(startPosition, endPosition));
+					removeChild(derivedRawSource, startPosition, endPosition);
 				}
 			}
 			else {
@@ -411,13 +413,91 @@ public class ChildrenContents<PN, PT, CN, CT> extends PrettyPrintableContents<PN
 				if (removedNode.getPostlude() != null) {
 					endPosition = removedNode.getPostlude().getEndPosition();
 				}
-				derivedRawSource.remove(startPosition.getOuterType().makeFragment(startPosition, endPosition));
+				removeChild(derivedRawSource, startPosition, endPosition);
 			}
 
 		}
 
 		// Update parent default insertion point
 		// getParentNode().setInsertionPoint(insertionPointAfterPostlude, this);
+	}
+
+	/**
+	 * Where a contents that follows this list is inserted: the insertion point of the list, which is the start of the row after its last
+	 * child when each child is on a row of its own, moved after the indentation of that row (the contents that follows is the first token of
+	 * the row, which keeps its indentation).
+	 */
+	RawSourcePosition insertionPointForFollowingContents() {
+		RawSourcePosition position = getInsertionPoint();
+		if (position != null && isRowStyle() && position.getPos() == 0 && !lastParsedNodes.isEmpty()) {
+			return position.increment(leadingWhitespaceLength(position));
+		}
+		return position;
+	}
+
+	/**
+	 * Remove a child, with its prelude and postlude. When the first of them lies before the fragment of the parent (the indentation of the
+	 * row, where the parent starts with this child), the removal starts at the parent: the indentation stays, and the indentation of the
+	 * row that follows, now the first one of the parent, goes.
+	 */
+	private void removeChild(DerivedRawSource derivedRawSource, RawSourcePosition start, RawSourcePosition end) {
+		RawSourceFragment parentFragment = getParentNode().getLastParsedFragment();
+		if (parentFragment != null && start.isBefore(parentFragment.getStartPosition())) {
+			start = parentFragment.getStartPosition();
+			String following = end.getPos() == 0 ? sourceIndentation(end.increment(Math.min(end.getOuterType().getRow(end.getLine() - 1).length(),
+					leadingWhitespaceLength(end))))
+					: null;
+			if (following != null && !following.isEmpty() && end.increment(following.length()).isBeforeOrEquals(parentFragment.getEndPosition())) {
+				end = end.increment(following.length());
+			}
+		}
+		derivedRawSource.remove(start.getOuterType().makeFragment(start, end));
+	}
+
+	private static int leadingWhitespaceLength(RawSourcePosition rowStart) {
+		String row = rowStart.getOuterType().getRow(rowStart.getLine() - 1);
+		int i = 0;
+		while (i < row.length() && Character.isWhitespace(row.charAt(i))) {
+			i++;
+		}
+		return i;
+	}
+
+	/**
+	 * The first child of a node may start where the node does, and its prelude (the indentation of the row) before: that indentation
+	 * belongs to the node (to the contents of the node of its own parent), and a change must stay inside the fragment of the node, whose
+	 * text is derived on its own.
+	 */
+	private RawSourcePosition clampToParent(RawSourcePosition position) {
+		RawSourceFragment parentFragment = getParentNode().getLastParsedFragment();
+		if (parentFragment != null && position.isBefore(parentFragment.getStartPosition())) {
+			return parentFragment.getStartPosition();
+		}
+		return position;
+	}
+
+	/**
+	 * True when each child is on a row of its own, indented like the others: a list that indents its children, or one whose postlude
+	 * ends the row (the annotations written before an FML declaration, one per row). Such a child has the indentation of its row as prelude.
+	 */
+	private boolean isRowStyle() {
+		return StringUtils.isEmpty(getPrelude()) && (getIndentation() == Indentation.Indent
+				|| (getPostlude() != null && getPostlude().endsWith(StringUtils.LINE_SEPARATOR)));
+	}
+
+	/**
+	 * Text inserted at the first token of a row that is indented (the node itself, whose first contents is this list), and ending with a
+	 * line separator: the token is pushed to a new row, which needs the same indentation. Without it the node would start at column 0
+	 * (P2PP-D-1).
+	 */
+	private static String keepLineIndentation(RawSourcePosition at, String insertThis) {
+		if (insertThis.endsWith("\n")) {
+			String indentation = sourceIndentation(at);
+			if (indentation != null && !indentation.isEmpty()) {
+				return insertThis + indentation;
+			}
+		}
+		return insertThis;
 	}
 
 	/**
@@ -449,7 +529,7 @@ public class ChildrenContents<PN, PT, CN, CT> extends PrettyPrintableContents<PN
 		if (getParentNode().getLastParsedFragment() != null) {
 			String indentation = sourceIndentation(getParentNode().getLastParsedFragment().getStartPosition());
 			if (indentation != null) {
-				return indentation + derivedContext.getResultingIndentation();
+				return getIndentation() == Indentation.Indent ? indentation + derivedContext.getResultingIndentation() : indentation;
 			}
 		}
 		return null;
@@ -459,9 +539,15 @@ public class ChildrenContents<PN, PT, CN, CT> extends PrettyPrintableContents<PN
 	 * Text of a new child. When the indentation of the source is known, the text is indented with it (every row of the child), instead of
 	 * being indented by one level of the context, which is wrong as soon as the parent is not at the root.
 	 */
-	private String newChildText(P2PPNode<?, CT> childNode, PrettyPrintContext derivedContext, String indentString) {
+	private String newChildText(P2PPNode<?, CT> childNode, PrettyPrintContext derivedContext, String indentString, RawSourcePosition at) {
+		// An insertion that follows indentation already there (at the first token of an indented row) needs none of its own
+		String alreadyThere = sourceIndentation(at);
+		if (alreadyThere != null && !alreadyThere.isEmpty()) {
+			indentString = null;
+		}
 		if (indentString == null) {
-			return childNode.getTextualRepresentation(derivedContext);
+			return childNode.getTextualRepresentation(alreadyThere != null && !alreadyThere.isEmpty() && getIndentation() == Indentation.Indent
+					? derivedContext.derive(Indentation.DoNotIndent) : derivedContext);
 		}
 		String text = childNode.getTextualRepresentation(derivedContext.derive(Indentation.DoNotIndent));
 		StringBuilder sb = new StringBuilder();
@@ -501,18 +587,18 @@ public class ChildrenContents<PN, PT, CN, CT> extends PrettyPrintableContents<PN
 				if (k > 0) {
 					insertThis.append(prelude);
 				}
-				insertThis.append(newChildText(newNodes.get(k), derivedContext, indentString)).append(postlude);
+				insertThis.append(newChildText(newNodes.get(k), derivedContext, indentString, insertAt)).append(postlude);
 			}
 			insertThis.append(prelude);
 		}
 		else {
-			insertAt = firstParsed.getPrelude() != null ? firstParsed.getPrelude().getStartPosition()
+			insertAt = firstParsed.getPrelude() != null ? clampToParent(firstParsed.getPrelude().getStartPosition())
 					: firstParsed.getLastParsedFragment().getStartPosition();
 			for (P2PPNode<?, CT> newNode : newNodes) {
-				insertThis.append(prelude).append(newChildText(newNode, derivedContext, indentString)).append(postlude);
+				insertThis.append(prelude).append(newChildText(newNode, derivedContext, indentString, insertAt)).append(postlude);
 			}
 		}
-		derivedRawSource.insert(insertAt, insertThis.toString());
+		derivedRawSource.insert(insertAt, keepLineIndentation(insertAt, insertThis.toString()));
 	}
 
 	@Override
@@ -583,8 +669,7 @@ public class ChildrenContents<PN, PT, CN, CT> extends PrettyPrintableContents<PN
 			if (childNode != null) {
 				// An indented child has as prelude the indentation of its row, whatever its depth (not one level of the context)
 				String sourceIndentation = null;
-				if (StringUtils.isEmpty(getPrelude()) && (i > 0 || StringUtils.isEmpty(preludeForFirstItem))
-						&& context.getIndentation() != Indentation.DoNotIndent && childNode.getLastParsedFragment() != null) {
+				if (isRowStyle() && (i > 0 || StringUtils.isEmpty(preludeForFirstItem)) && childNode.getLastParsedFragment() != null) {
 					sourceIndentation = sourceIndentation(childNode.getLastParsedFragment().getStartPosition());
 				}
 				if (sourceIndentation != null && sourceIndentation.length() > 0) {

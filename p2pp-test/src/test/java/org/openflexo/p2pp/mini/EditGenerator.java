@@ -83,6 +83,17 @@ public final class EditGenerator {
 			moves("move-concept", path, n, i);
 		}
 
+		// Annotations of the concepts: the first contents of a node
+		for (Concept c : unit.getConcepts()) {
+			int a = c.getAnnotations().size();
+			for (int i = 0; i <= a; i++) {
+				add("add-annotation", addPosition(a, i), "add annotation " + c.getName() + " Gen at " + i, "remove annotation " + c.getName() + " Gen");
+			}
+			for (int i = 0; i < a; i++) {
+				add("remove-annotation", removePosition(a, i), "remove annotation " + c.getName() + " " + c.getAnnotations().get(i).getName(), null);
+			}
+		}
+
 		// Members of the concepts
 		for (Concept c : unit.getConcepts()) {
 			int m = c.getMembers().size();

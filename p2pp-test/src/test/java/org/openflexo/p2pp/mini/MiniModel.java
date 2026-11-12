@@ -49,6 +49,10 @@ public final class MiniModel {
 		return returned;
 	}
 
+	public static Annotation annotation(String name) {
+		return new Annotation(name);
+	}
+
 	public static Param param(String name, String type) {
 		return new Param(name, type);
 	}
@@ -98,6 +102,7 @@ public final class MiniModel {
 		private boolean isAbstract;
 		private String parentName;
 		private final List<Member> members = new ArrayList<>();
+		private final List<Annotation> annotations = new ArrayList<>();
 
 		public Concept(String name) {
 			this.name = name;
@@ -133,8 +138,16 @@ public final class MiniModel {
 			return members;
 		}
 
+		/** Written on rows of their own before the concept: the first contents of the node of a concept */
+		public List<Annotation> getAnnotations() {
+			return annotations;
+		}
+
 		@Override
 		public void dump(StringBuilder sb, String indent) {
+			for (Annotation a : annotations) {
+				sb.append(indent).append("annotation ").append(a.getName()).append("\n");
+			}
 			sb.append(indent).append("concept ").append(name);
 			if (isAbstract) {
 				sb.append(" abstract");
@@ -146,6 +159,22 @@ public final class MiniModel {
 			for (Member m : members) {
 				m.dump(sb, indent + "  ");
 			}
+		}
+	}
+
+	public static class Annotation {
+		private String name;
+
+		public Annotation(String name) {
+			this.name = name;
+		}
+
+		public String getName() {
+			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
 		}
 	}
 

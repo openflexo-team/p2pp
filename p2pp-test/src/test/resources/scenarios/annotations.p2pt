@@ -1,0 +1,122 @@
+# The first contents of a node: annotations written on rows of their own before an indented concept (P2PP-D-1).
+
+=== add an annotation to an indented concept
+--- source
+unit U {
+	concept A {
+	}
+}
+--- edit
+add annotation A note
+--- expect
+unit U {
+	@note
+	concept A {
+	}
+}
+
+=== add an annotation to the second concept
+--- source
+unit U {
+	concept A {
+	}
+	concept B {
+	}
+}
+--- edit
+add annotation B note
+--- expect
+unit U {
+	concept A {
+	}
+	@note
+	concept B {
+	}
+}
+
+=== add an annotation after the existing ones
+--- source
+unit U {
+	@one
+	concept A {
+	}
+}
+--- edit
+add annotation A two
+--- expect
+unit U {
+	@one
+	@two
+	concept A {
+	}
+}
+
+=== add an annotation before the existing ones
+--- source
+unit U {
+	@one
+	concept A {
+	}
+}
+--- edit
+add annotation A zero at 0
+--- expect
+unit U {
+	@zero
+	@one
+	concept A {
+	}
+}
+
+=== remove the only annotation
+--- source
+unit U {
+	@one
+	concept A {
+	}
+}
+--- edit
+remove annotation A one
+--- expect
+unit U {
+	concept A {
+	}
+}
+
+=== remove an annotation among others
+--- source
+unit U {
+	@one
+	@two
+	@three
+	concept A {
+	}
+}
+--- edit
+remove annotation A two
+--- expect
+unit U {
+	@one
+	@three
+	concept A {
+	}
+}
+
+=== add an annotation to an abstract concept with a parent
+--- source
+unit U {
+	concept A {
+	}
+	abstract concept B extends A {
+	}
+}
+--- edit
+add annotation B note
+--- expect
+unit U {
+	concept A {
+	}
+	@note
+	abstract concept B extends A {
+	}
+}

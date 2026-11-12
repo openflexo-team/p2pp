@@ -16,7 +16,7 @@ import org.openflexo.p2pp.mini.MiniAst.Tok;
 public final class MiniParser {
 
 	private static final Set<String> KEYWORDS = new HashSet<>(Arrays.asList("unit", "abstract", "concept", "extends", "field", "const", "method"));
-	private static final String PUNCTUATION = "{}():;,";
+	private static final String PUNCTUATION = "{}():;,@";
 
 	private final RawSource raw;
 	private final List<Tok> tokens;
@@ -140,6 +140,12 @@ public final class MiniParser {
 
 	private MiniAst concept() throws MiniParseException {
 		MiniAst a = new MiniAst("concept");
+		while (peek("@")) {
+			MiniAst annotation = new MiniAst("annotation");
+			annotation.put("at", next());
+			annotation.put("name", ident());
+			a.add(annotation);
+		}
 		if (peek("abstract")) {
 			a.put("abstract", next());
 		}
