@@ -54,7 +54,7 @@ import org.openflexo.p2pp.RawSource.RawSourcePosition;
  * <ul>
  * <li>a <b>token</b>: inside the fragment of a static or dynamic contents;</li>
  * <li>a <b>separator</b>: the non-blank text of an identified prelude or postlude ({@code ,} {@code ;});</li>
- * <li>a <b>comment</b>, recognized outside tokens with the {@link CommentSyntax} of the language;</li>
+ * <li>a <b>comment</b>, recognized outside tokens with the {@link LexicalSyntax} of the language;</li>
  * <li><b>layout</b>: whitespace outside tokens and comments.</li>
  * </ul>
  * What is left is text no node describes (code the parser kept no node for).
@@ -62,10 +62,12 @@ import org.openflexo.p2pp.RawSource.RawSourcePosition;
  * Only the leading whitespace of a row is ever rewritten, so that no token, comment or spacing inside a row changes and the text keeps its
  * meaning:
  * <ul>
- * <li>a row whose first character is a token or a separator gets the depth of that token, one level more when it continues the row before:
- * when the specification declares no line break before that token (a statement written over several rows);</li>
+ * <li>a row whose first character is a token or a separator gets the depth of that token. When it continues the row before (the
+ * specification declares no line break before that token: a statement written over several rows), it is aligned on the text that follows
+ * a {@code (} or a {@code [} opened on an earlier row of the statement and still open, or else indented one level more;</li>
  * <li>a row starting a comment gets the deepest depth found between the token before it and the token after it, the empty lists in between
- * included: a comment after an opening brace, before a closing one, or alone in an empty block belongs to the block;</li>
+ * included: a comment after an opening brace, before a closing one, or alone in an empty block belongs to the block; inside a bracket left
+ * open by a statement, it is aligned as a continuation row;</li>
  * <li>a row inside a block comment that began on an earlier row moves with the row the comment began on, keeping its indentation relative to
  * it (the {@code  * } rows of a documentation comment, commented-out code); if it is less indented than that row, it is left as it is;</li>
  * <li>a row starting inside a token spanning several rows (a string literal), or with text no node describes, is left as it is;</li>
@@ -78,24 +80,6 @@ import org.openflexo.p2pp.RawSource.RawSourcePosition;
  * parses it again, then re-indents.
  */
 public class Reindenter {
-
-	/**
-	 * How comments are written in the language: a line comment prefix and the delimiters of a block comment (any may be null)
-	 */
-	public static class CommentSyntax {
-		/** {@code // ...} and {@code /* ... *&#47;}, the syntax of FML, of B and of Mini */
-		public static final CommentSyntax C_STYLE = new CommentSyntax("//", "/*", "*/");
-
-		private final String lineComment;
-		private final String blockStart;
-		private final String blockEnd;
-
-		public CommentSyntax(String lineComment, String blockStart, String blockEnd) {
-			this.lineComment = lineComment;
-			this.blockStart = blockStart;
-			this.blockEnd = blockEnd;
-		}
-	}
 
 	/** A comment of the text: from its start to its end (excluded) */
 	private static class Comment {
@@ -188,24 +172,26 @@ public class Reindenter {
 	private final List<Anchor> inOrder = new ArrayList<>();
 	private final List<Anchor> positioned = new ArrayList<>();
 	private final List<Comment> comments = new ArrayList<>();
+	private final LexicalSyntax syntax;
 
 	/**
-	 * A re-indenter for a language with C-style comments, indenting with the unit of the pretty-print context of the root node
+	 * A re-indenter with the lexical syntax of the root node, indenting with the unit of its pretty-print context
 	 */
 	public Reindenter(P2PPNode<?, ?> rootNode) {
 		this(rootNode, rootNode.makePrettyPrintContext().derive(Indentation.Indent).getResultingIndentation());
 	}
 
 	/**
-	 * A re-indenter for a language with C-style comments
+	 * A re-indenter with the lexical syntax of the root node ({@link P2PPNode#getLexicalSyntax()})
 	 */
 	public Reindenter(P2PPNode<?, ?> rootNode, String unit) {
-		this(rootNode, unit, CommentSyntax.C_STYLE);
+		this(rootNode, unit, rootNode.getLexicalSyntax());
 	}
 
-	public Reindenter(P2PPNode<?, ?> rootNode, String unit, CommentSyntax commentSyntax) {
+	public Reindenter(P2PPNode<?, ?> rootNode, String unit, LexicalSyntax syntax) {
 		this.rawSource = rootNode.getRawSource();
 		this.unit = unit;
+		this.syntax = syntax != null ? syntax : LexicalSyntax.C_STYLE;
 		visitNode(rootNode, 0);
 		for (Anchor a : inOrder) {
 			if (a.fragment != null) {
@@ -213,7 +199,7 @@ public class Reindenter {
 			}
 		}
 		Collections.sort(positioned, (a1, a2) -> a1.start().compareTo(a2.start()));
-		findComments(commentSyntax);
+		findComments(this.syntax);
 	}
 
 	public RawSource getRawSource() {
@@ -352,28 +338,28 @@ public class Reindenter {
 	}
 
 	/** Find the comments of the text, outside the tokens (a {@code //} in a string literal is not a comment) */
-	private void findComments(CommentSyntax syntax) {
+	private void findComments(LexicalSyntax syntax) {
 		RawSourcePosition blockStart = null;
 		for (int line = 1; line <= rawSource.size(); line++) {
 			String row = rawSource.getRow(line - 1);
 			int c = 0;
 			while (c < row.length()) {
 				if (blockStart != null) {
-					int close = row.indexOf(syntax.blockEnd, c);
+					int close = row.indexOf(syntax.getBlockCommentEnd(), c);
 					if (close < 0) {
 						break;
 					}
-					c = close + syntax.blockEnd.length();
+					c = close + syntax.getBlockCommentEnd().length();
 					comments.add(new Comment(blockStart, at(line, c)));
 					blockStart = null;
 				}
-				else if (startsWith(row, syntax.lineComment, c) && anchorAt(at(line, c)) == null) {
+				else if (startsWith(row, syntax.getLineComment(), c) && anchorAt(at(line, c)) == null) {
 					comments.add(new Comment(at(line, c), at(line, row.length())));
 					break;
 				}
-				else if (startsWith(row, syntax.blockStart, c) && syntax.blockEnd != null && anchorAt(at(line, c)) == null) {
+				else if (startsWith(row, syntax.getBlockCommentStart(), c) && syntax.getBlockCommentEnd() != null && anchorAt(at(line, c)) == null) {
 					blockStart = at(line, c);
-					c += syntax.blockStart.length();
+					c += syntax.getBlockCommentStart().length();
 				}
 				else {
 					c++;
@@ -521,6 +507,109 @@ public class Reindenter {
 		return prefix + "text that no node describes, left as it is";
 	}
 
+	/** True when the first character of the row is in a token or a separator that does not continue the row before */
+	private boolean startsAStatement(int line) {
+		String row = rawSource.getRow(line - 1);
+		int k = leadingWhitespace(row);
+		if (k == row.length() || startsInsideToken(line)) {
+			return false;
+		}
+		Anchor anchor = anchorAt(at(line, k));
+		return anchor != null && anchor.breakBefore;
+	}
+
+	/**
+	 * For a row continuing a statement: when a delimiter of alignment ({@link LexicalSyntax#getAlignmentDelimiters()}, {@code (} and
+	 * {@code [} in C style) opened on an earlier row of the statement is still open, and text follows it on its row, the indentation that puts the row under that text (the indentation of the row of the bracket, then a space for
+	 * each character up to the text, a tab kept as a tab, so that the alignment holds whatever the width of a tab). Null otherwise: no
+	 * bracket open, or one ending its row (the row is then indented one level more). Comments and string literals are skipped.
+	 */
+	private String alignedOnOpenBracket(int line) {
+		if (line <= 1) {
+			return null;
+		}
+		int start = line - 1;
+		while (start > 1 && !startsAStatement(start)) {
+			start--;
+		}
+		List<String[]> pairs = syntax.getAlignmentDelimiters();
+		if (pairs.isEmpty()) {
+			return null;
+		}
+		// the delimiters left open: {row, column of the text after the opening, index of the pair}
+		List<int[]> open = new ArrayList<>();
+		for (int l = start; l < line; l++) {
+			String row = rawSource.getRow(l - 1);
+			char quote = 0;
+			for (int c = 0; c < row.length(); c++) {
+				char ch = row.charAt(c);
+				if (quote != 0) {
+					if (syntax.getEscape() != null && ch == syntax.getEscape()) {
+						c++;
+					}
+					else if (ch == quote) {
+						quote = 0;
+					}
+					continue;
+				}
+				Comment comment = commentAt(at(l, c));
+				if (comment != null) {
+					if (comment.end.getLine() > l) {
+						// a block comment going on: resume after it
+						if (comment.end.getLine() >= line) {
+							break;
+						}
+						l = comment.end.getLine() - 1;
+						break;
+					}
+					c = comment.end.getPos() - 1;
+					continue;
+				}
+				if (syntax.getStringDelimiters().indexOf(ch) >= 0) {
+					quote = ch;
+					continue;
+				}
+				for (int k = 0; k < pairs.size(); k++) {
+					String[] pair = pairs.get(k);
+					if (row.startsWith(pair[0], c)) {
+						open.add(new int[] { l, c + pair[0].length(), k });
+						c += pair[0].length() - 1;
+						break;
+					}
+					if (row.startsWith(pair[1], c)) {
+						// closes the last opening of its pair, and what was opened after it
+						for (int o = open.size() - 1; o >= 0; o--) {
+							if (open.get(o)[2] == k) {
+								open.subList(o, open.size()).clear();
+								break;
+							}
+						}
+						c += pair[1].length() - 1;
+						break;
+					}
+				}
+			}
+		}
+		if (open.isEmpty()) {
+			return null;
+		}
+		int[] bracket = open.get(open.size() - 1);
+		String row = rawSource.getRow(bracket[0] - 1);
+		int text = bracket[1];
+		while (text < row.length() && Character.isWhitespace(row.charAt(text))) {
+			text++;
+		}
+		if (text >= row.length() || commentAt(at(bracket[0], text)) != null) {
+			// the bracket ends its row
+			return null;
+		}
+		StringBuilder sb = new StringBuilder(newIndentation(bracket[0]));
+		for (int c = leadingWhitespace(row); c < text; c++) {
+			sb.append(row.charAt(c) == '\t' ? '\t' : ' ');
+		}
+		return sb.toString();
+	}
+
 	/** The indentation a row must have; for a row left as it is, its own */
 	private String newIndentation(int line) {
 		String row = rawSource.getRow(line - 1);
@@ -535,8 +624,13 @@ public class Reindenter {
 		RawSourcePosition p = at(line, k);
 		Anchor anchor = anchorAt(p);
 		if (anchor != null) {
-			// a row that continues the one before (a statement written over several rows) is indented one level more
-			return indentation(anchor.breakBefore ? anchor.depth : anchor.depth + 1);
+			if (anchor.breakBefore) {
+				return indentation(anchor.depth);
+			}
+			// a row that continues the one before (a statement written over several rows): aligned on the text after a bracket left open,
+			// else one level more
+			String aligned = alignedOnOpenBracket(line);
+			return aligned != null ? aligned : indentation(anchor.depth + 1);
 		}
 		Comment comment = commentAt(p);
 		if (comment == null) {
@@ -544,7 +638,9 @@ public class Reindenter {
 			return oldIndentation;
 		}
 		if (comment.start.equals(p)) {
-			return indentation(triviaDepth(p));
+			// a comment inside the brackets of a statement is aligned like the arguments around it
+			String aligned = alignedOnOpenBracket(line);
+			return aligned != null ? aligned : indentation(triviaDepth(p));
 		}
 		// inside a block comment begun on an earlier row: it moves with that row
 		int headLine = comment.start.getLine();

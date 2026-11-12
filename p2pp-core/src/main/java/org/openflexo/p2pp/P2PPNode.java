@@ -225,6 +225,14 @@ public abstract class P2PPNode<N, T> {
 	}
 
 	/**
+	 * The lexical syntax of the language, as the re-indentation needs it (comments, delimiters of alignment, string literals): C style
+	 * unless the language overrides it on its root node
+	 */
+	public LexicalSyntax getLexicalSyntax() {
+		return LexicalSyntax.C_STYLE;
+	}
+
+	/**
 	 * Build and return a new pretty-print context
 	 * 
 	 * @return

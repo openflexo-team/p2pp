@@ -119,12 +119,15 @@ fragment), false→true (insert and remove any stale fragment), still false.
 
 `new Reindenter(rootNode).reindent(fromLine, toLine)` re-indents rows of a parsed text (P2PP-F-1). The depth of every token is the number of
 contents declared `Indent` around it, the nesting the normalized rendering indents with. A character is a *token* (in the fragment of a
-static or dynamic contents), a *separator* (non-blank text of an identified prelude or postlude), a *comment* (recognized outside tokens
-with a `CommentSyntax`, `//` and `/* */` by default) or *layout* (whitespace); anything else is text no node describes. Only the leading
+static or dynamic contents), a *separator* (non-blank text of an identified prelude or postlude), a *comment* or *layout* (whitespace);
+anything else is text no node describes. The lexical part comes from a `LexicalSyntax` — comments, pairs of delimiters of alignment,
+string literals — that the root node gives (`P2PPNode.getLexicalSyntax()`, `LexicalSyntax.C_STYLE` by default: `//`, `/* */`, `( )`,
+`[ ]`, `"`, `'`) or that is passed to the `Reindenter`. Only the leading
 whitespace of rows is rewritten:
 
-- a row starting with a token or a separator gets the depth of that token, one level more when no line break is declared before it in the
-  specification (preludes and postludes holding a line separator): the following rows of a statement written over several rows;
+- a row starting with a token or a separator gets the depth of that token. When no line break is declared before it in the specification
+  (preludes and postludes holding a line separator), it continues a statement written over several rows: it is aligned on the text after
+  a pair of delimiters of alignment still open from an earlier row of the statement (tabs, then spaces), else indented one level more;
 - a row starting a comment gets the deepest depth between the tokens around it, the lists declared between them included, so that a
   comment after `{`, before `}` or alone in an empty block belongs to the block;
 - a row inside a block comment moves with the row the comment began on, keeping its relative indentation (commented-out code);

@@ -252,17 +252,63 @@ public class TestMiniReindent {
 				"b : string);", //
 				"}", //
 				"}");
-		// a parameter starting a row continues the row of the method (no line break is declared before it): one level more
+		// a parameter starting a row continues the row of the method (no line break is declared before it): aligned on the first parameter
 		String expected = String.join("\n", //
 				"unit U {", //
 				"\t@first", //
 				"\t@second", //
 				"\tconcept A {", //
 				"\t\tmethod m(a : int,", //
-				"\t\t\tb : string);", //
+				"\t\t         b : string);", //
 				"\t}", //
 				"}");
 		assertEquals(show(expected), show(reindent(source)));
+	}
+
+	@Test
+	public void aContinuationRowIsAlignedOnTheTextAfterAnOpenBracket() throws MiniParseException {
+		String source = String.join("\n", //
+				"unit U {", //
+				"concept A {", //
+				"method m(", //
+				"a : int,", //
+				"b : string);", //
+				"method n(  a : int, // first", //
+				"/* ( not a bracket */ b : string,", //
+				"c : int);", //
+				"}", //
+				"}");
+		// a bracket ending its row: one level more; text after the bracket: aligned on it, comments skipped
+		String expected = String.join("\n", //
+				"unit U {", //
+				"\tconcept A {", //
+				"\t\tmethod m(", //
+				"\t\t\ta : int,", //
+				"\t\t\tb : string);", //
+				"\t\tmethod n(  a : int, // first", //
+				"\t\t           /* ( not a bracket */ b : string,", //
+				"\t\t           c : int);", //
+				"\t}", //
+				"}");
+		assertEquals(show(expected), show(reindent(source)));
+	}
+
+	@Test
+	public void theLexicalSyntaxIsAParameter() throws MiniParseException {
+		String source = String.join("\n", "unit U {", "concept A {", "// note", "method m(a : int,", "b : string);", "}", "}");
+		MiniDocument document = MiniDocument.parse(source);
+		// no delimiter of alignment: a continuation row is one level more
+		String withoutAlignment = new Reindenter(document.getRootNode(), "\t", LexicalSyntax.C_STYLE.withoutAlignment()).reindent();
+		assertEquals(show(String.join("\n", "unit U {", "\tconcept A {", "\t\t// note", "\t\tmethod m(a : int,", "\t\t\tb : string);", "\t}",
+				"}")), show(withoutAlignment));
+		// no comment syntax: "// note" is text that no node describes, left as it is
+		String withoutComments = new Reindenter(document.getRootNode(), "\t", LexicalSyntax.C_STYLE.withComments(null, null, null))
+				.reindent();
+		assertEquals(show(String.join("\n", "unit U {", "\tconcept A {", "// note", "\t\tmethod m(a : int,", "\t\t         b : string);",
+				"\t}", "}")), show(withoutComments));
+		// the root node gives its syntax: C style by default
+		assertEquals(show(new Reindenter(document.getRootNode(), "\t", LexicalSyntax.C_STYLE).reindent()),
+				show(new Reindenter(document.getRootNode()).reindent()));
 	}
 
 	@Test
