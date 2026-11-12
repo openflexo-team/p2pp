@@ -36,7 +36,7 @@ text is parsed into a unit of its own, the model is not touched; a text that doe
   outside it and gives the rows inside what the whole text gives them; comments, block comments of commented-out code, annotations,
   continuation rows, free layout.
 - `TestFMLReindent` (fml-parser, the 32 `FMLParsingExamples`): the same oracles; normalized pretty-prints are fixed points, which checks
-  that the FML nodes declare every line break they write (4 units skipped: their normalized text does not parse, CORE-D-58; a fifth one was fixed with CORE-D-57).
+  that the FML nodes declare every line break they write (all 32 since CORE-D-57 and CORE-D-58 were fixed: their normalized text parses again).
   `TestFMLReindentCases`: `else` on its own row, a wrapped statement, an annotation before `model`.
 - `TestRowsToReindent` (fml-technologyadapter-ui): the rows of a selection.
 
