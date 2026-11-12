@@ -109,6 +109,7 @@ public class DynamicContents<N, T> extends PrettyPrintableContents<N, T> {
 		}
 
 		RawSourceFragment fragmentToReplace = getFragment();
+		boolean inserted = fragmentToReplace == null;
 
 		if (fragmentToReplace == null) {
 			fragmentToReplace = makeInsertionFragment();
@@ -124,6 +125,9 @@ public class DynamicContents<N, T> extends PrettyPrintableContents<N, T> {
 				if (getPostludeFragment() == null) {
 					replacedString = replacedString + getPostlude();
 				}
+			}
+			if (inserted) {
+				replacedString = separatorMissingBeforeInsertion(replacedString) + replacedString;
 			}
 		}
 		else {

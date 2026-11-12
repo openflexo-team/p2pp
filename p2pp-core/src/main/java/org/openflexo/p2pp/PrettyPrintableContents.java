@@ -252,6 +252,25 @@ public abstract class PrettyPrintableContents<N, T> {
 	}
 
 	/**
+	 * The separator that a contents inserted at the insertion point must start with: the canonical postlude of the contents it follows,
+	 * when that postlude is whitespace that the source wrote empty. As long as nothing is inserted, an empty postlude is the layout of the
+	 * source and is kept (P2PP-D-6); a contents inserted right after it would be glued to it ({@code nameXwith} for {@code name} followed
+	 * by an inserted {@code with}, CORE-D-60). Only the first contents inserted after a parsed one starts with it: the contents just
+	 * before must be a parsed one. Empty when the inserted text starts with whitespace, or when nothing is missing.
+	 */
+	protected String separatorMissingBeforeInsertion(String inserted) {
+		if (inserted == null || inserted.isEmpty() || Character.isWhitespace(inserted.charAt(0))) {
+			return "";
+		}
+		PrettyPrintableContents<?, ?> before = getPreviousContents();
+		if (before == null || before.getFragment() == null || !isWhitespace(before.getPostlude())) {
+			return "";
+		}
+		RawSourceFragment parsedPostlude = before.getPostludeFragment();
+		return parsedPostlude != null && parsedPostlude.getLength() == 0 ? before.getPostlude() : "";
+	}
+
+	/**
 	 * Return end position of this contents, asserting that it relies on an existing fragment
 	 * 
 	 * @return

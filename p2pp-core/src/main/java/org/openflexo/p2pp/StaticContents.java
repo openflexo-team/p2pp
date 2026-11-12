@@ -122,6 +122,9 @@ public class StaticContents<N, T> extends PrettyPrintableContents<N, T> {
 			}
 		}
 
+		if (getFragment() == null) {
+			replacedString = separatorMissingBeforeInsertion(replacedString) + replacedString;
+		}
 		derivedRawSource.replace(getFragment() == null ? makeInsertionFragment() : getFragment(), replacedString);
 
 	}
