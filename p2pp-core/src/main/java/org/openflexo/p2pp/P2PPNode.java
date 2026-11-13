@@ -242,14 +242,14 @@ public abstract class P2PPNode<N, T> {
 	}
 
 	/**
-	 * Initialize pretty print features while recursively calling {@link #preparePrettyPrint(boolean)} for the whole {@link P2PPNode}
+	 * Initialize pretty print features while recursively calling {@link #definePrettyPrint(boolean)} for the whole {@link P2PPNode}
 	 * hierarchy
 	 * 
 	 * @param rootNode
 	 * @param context
 	 */
 	public final void initializePrettyPrint(P2PPNode<?, ?> rootNode, PrettyPrintContext context) {
-		preparePrettyPrint(getASTNode() != null);
+		definePrettyPrint(getASTNode() != null);
 		refreshDefaultInsertionPoint();
 
 		for (PrettyPrintableContents<N, T> prettyPrintableContents : new ArrayList<>(ppContents)) {
@@ -273,12 +273,27 @@ public abstract class P2PPNode<N, T> {
 	}
 
 	/**
-	 * This method is called to set the specifications of the pretty-print to apply for this node<br>
-	 * This is here a trivial initialization and this method should be overriden
-	 * 
+	 * Define how this node is printed: append, in the order they are written, the contents its text is made of
+	 * ({@link #staticContents(String)}, {@link #dynamicContents(java.util.function.Supplier)},
+	 * {@link #childContents(String, java.util.function.Supplier, String, Indentation)}, {@link #childrenContents(String, java.util.function.Supplier, String, Indentation, Class)},
+	 * conditional parts with {@link #when(java.util.function.Supplier)}), each with the fragment of the source it was parsed from: null
+	 * when this node was not parsed, or when that part is absent from the source.
+	 * <p>
+	 * This single definition drives both pretty-prints. The normalized one ({@link #getNormalizedTextualRepresentation(PrettyPrintContext)})
+	 * writes the contents one after the other. The preserving one ({@link #getTextualRepresentation(PrettyPrintContext)}) starts from the
+	 * parsed text, and only rewrites, inserts or removes the fragments of the contents whose value changed: the text that no contents
+	 * declares (spaces, comments) is kept as it was written.
+	 * <p>
+	 * Called by {@link #initializePrettyPrint(P2PPNode, PrettyPrintContext)} for a parsed node (and, through its child contents, for its
+	 * descendants), and by the language for a node created for a model object, usually from its constructor with {@code false}. It must
+	 * be called once only: each call appends the contents again. An override calls {@code super.definePrettyPrint(hasParsedVersion)}
+	 * first, which sets the default insertion point.
+	 *
 	 * @param hasParsedVersion
+	 *            true when this node was built from the source (it has an AST node, so its contents can be given their fragments); false
+	 *            for a node created for a model object, which has no source and is written in its normalized form
 	 */
-	protected void preparePrettyPrint(boolean hasParsedVersion) {
+	protected void definePrettyPrint(boolean hasParsedVersion) {
 		defaultInsertionPoint = getStartPosition();
 	}
 

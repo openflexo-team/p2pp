@@ -55,7 +55,7 @@ small *printing specification* side by side, and merges them on demand.
 - owns an ordered list of `PrettyPrintableContents`, the declarative printing specification of the object (next section);
 - is abstract: each language subclasses it, one subclass per model concept (about 19 in FML, 11 in B).
 
-The printing specification is declared once per node, in `preparePrettyPrint(boolean hasParsedVersion)`. The same declaration drives both the
+The printing specification is declared once per node, in `definePrettyPrint(boolean hasParsedVersion)`. The same declaration drives both the
 normalized rendering and the update of an existing text.
 
 #### Printing specification: `PrettyPrintableContents`

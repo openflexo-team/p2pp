@@ -55,8 +55,8 @@ public class TestKeepParsedTextWhileUnchanged {
 		}
 
 		@Override
-		protected void preparePrettyPrint(boolean hasParsedVersion) {
-			super.preparePrettyPrint(hasParsedVersion);
+		protected void definePrettyPrint(boolean hasParsedVersion) {
+			super.definePrettyPrint(hasParsedVersion);
 			DynamicContents<RawSourceFragment, Holder> value = dynamicContents(() -> String.valueOf(getModelObject().value));
 			if (keep) {
 				value.keepingParsedTextWhileUnchanged();

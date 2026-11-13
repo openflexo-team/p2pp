@@ -141,7 +141,7 @@ public final class MiniNodes {
 
 		public MiniUnitNode(Unit unit, RawSource rawSource) {
 			super(unit, rawSource);
-			preparePrettyPrint(false);
+			definePrettyPrint(false);
 		}
 
 		@Override
@@ -166,8 +166,8 @@ public final class MiniNodes {
 		}
 
 		@Override
-		protected void preparePrettyPrint(boolean hasParsedVersion) {
-			super.preparePrettyPrint(hasParsedVersion);
+		protected void definePrettyPrint(boolean hasParsedVersion) {
+			super.definePrettyPrint(hasParsedVersion);
 			append(staticContents("", "unit", " "), frag("kw"));
 			append(dynamicContents(() -> getModelObject().getName()), frag("name"));
 			append(staticContents(" ", "{", LINE_SEPARATOR), frag("open"));
@@ -184,7 +184,7 @@ public final class MiniNodes {
 
 		public MiniConceptNode(Concept concept, RawSource rawSource) {
 			super(concept, rawSource);
-			preparePrettyPrint(false);
+			definePrettyPrint(false);
 		}
 
 		@Override
@@ -202,8 +202,8 @@ public final class MiniNodes {
 		}
 
 		@Override
-		protected void preparePrettyPrint(boolean hasParsedVersion) {
-			super.preparePrettyPrint(hasParsedVersion);
+		protected void definePrettyPrint(boolean hasParsedVersion) {
+			super.definePrettyPrint(hasParsedVersion);
 			// The annotations come first, each on a row of its own, before the header of the concept, and they are not indented by the list
 			// (the concept itself is): the first contents of a node, whose first token is where an insertion lands
 			append(childrenContents("", () -> getModelObject().getAnnotations(), LINE_SEPARATOR, Indentation.DoNotIndent, Annotation.class));
@@ -226,7 +226,7 @@ public final class MiniNodes {
 
 		public MiniAnnotationNode(Annotation annotation, RawSource rawSource) {
 			super(annotation, rawSource);
-			preparePrettyPrint(false);
+			definePrettyPrint(false);
 		}
 
 		@Override
@@ -241,8 +241,8 @@ public final class MiniNodes {
 		}
 
 		@Override
-		protected void preparePrettyPrint(boolean hasParsedVersion) {
-			super.preparePrettyPrint(hasParsedVersion);
+		protected void definePrettyPrint(boolean hasParsedVersion) {
+			super.definePrettyPrint(hasParsedVersion);
 			append(staticContents("", "@", ""), frag("at"));
 			append(dynamicContents(() -> getModelObject().getName()), frag("name"));
 		}
@@ -256,7 +256,7 @@ public final class MiniNodes {
 
 		public MiniFieldNode(Field field, RawSource rawSource) {
 			super(field, rawSource);
-			preparePrettyPrint(false);
+			definePrettyPrint(false);
 		}
 
 		@Override
@@ -271,8 +271,8 @@ public final class MiniNodes {
 		}
 
 		@Override
-		protected void preparePrettyPrint(boolean hasParsedVersion) {
-			super.preparePrettyPrint(hasParsedVersion);
+		protected void definePrettyPrint(boolean hasParsedVersion) {
+			super.definePrettyPrint(hasParsedVersion);
 			// 'const' or 'field': a condition with its ELSE. Only the branch that was parsed knows its token.
 			boolean parsedConst = getASTNode() != null && "const".equals(getASTNode().text("kw"));
 			when(() -> getModelObject().isConst(), "const").thenAppend(staticContents("", "const", " "), parsedConst ? frag("kw") : null)
@@ -293,7 +293,7 @@ public final class MiniNodes {
 
 		public MiniTypeRefNode(TypeRef type, RawSource rawSource) {
 			super(type, rawSource);
-			preparePrettyPrint(false);
+			definePrettyPrint(false);
 		}
 
 		@Override
@@ -308,8 +308,8 @@ public final class MiniNodes {
 		}
 
 		@Override
-		protected void preparePrettyPrint(boolean hasParsedVersion) {
-			super.preparePrettyPrint(hasParsedVersion);
+		protected void definePrettyPrint(boolean hasParsedVersion) {
+			super.definePrettyPrint(hasParsedVersion);
 			append(dynamicContents(() -> getModelObject().getName()), frag("name"));
 		}
 	}
@@ -322,7 +322,7 @@ public final class MiniNodes {
 
 		public MiniMethodNode(Method method, RawSource rawSource) {
 			super(method, rawSource);
-			preparePrettyPrint(false);
+			definePrettyPrint(false);
 		}
 
 		@Override
@@ -337,8 +337,8 @@ public final class MiniNodes {
 		}
 
 		@Override
-		protected void preparePrettyPrint(boolean hasParsedVersion) {
-			super.preparePrettyPrint(hasParsedVersion);
+		protected void definePrettyPrint(boolean hasParsedVersion) {
+			super.definePrettyPrint(hasParsedVersion);
 			// the header is a block of its own, built directly as a sequence
 			SequentialContents<MiniAst, Method> header = appendBlock();
 			header.append(staticContents("", "method", " "), frag("kw"));
@@ -358,7 +358,7 @@ public final class MiniNodes {
 
 		public MiniParamNode(Param param, RawSource rawSource) {
 			super(param, rawSource);
-			preparePrettyPrint(false);
+			definePrettyPrint(false);
 		}
 
 		@Override
@@ -373,8 +373,8 @@ public final class MiniNodes {
 		}
 
 		@Override
-		protected void preparePrettyPrint(boolean hasParsedVersion) {
-			super.preparePrettyPrint(hasParsedVersion);
+		protected void definePrettyPrint(boolean hasParsedVersion) {
+			super.definePrettyPrint(hasParsedVersion);
 			append(dynamicContents(() -> getModelObject().getName()), frag("name"));
 			// the type is optional: its prelude (the colon) goes with it when its value is empty
 			append(dynamicContents(" : ", () -> getModelObject().getType()), frag("type"));

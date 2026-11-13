@@ -27,7 +27,7 @@ Only the layout is damaged: the result is still valid FML, parses back, and decl
 
 **Mechanism - verified in the code.**
 
-1. `FlexoConceptNode.preparePrettyPrint()` (`openflexo-core/fml-parser`) declares the metadata as its FIRST contents:
+1. `FlexoConceptNode.definePrettyPrint()` (`openflexo-core/fml-parser`) declares the metadata as its FIRST contents:
    `childrenContents("", () -> getModelObject().getMetaData(), LINE_SEPARATOR, Indentation.DoNotIndent, FMLMetaData.class, "MetaData")` -
    an empty prelude, a line separator as postlude, no indentation.
 2. `ChildrenContents.updatePrettyPrint()` inserts a child that was not parsed at `getInsertionPoint()`, as
