@@ -326,6 +326,13 @@ public abstract class PrettyPrintableContents<N, T> {
 	public abstract void initializePrettyPrint(P2PPNode<?, ?> rootNode, PrettyPrintContext context);
 
 	/**
+	 * Record, for the contents that keep their parsed text while their value is unchanged, the value that text stands for (P2PP-F-2). Does
+	 * nothing by default
+	 */
+	public void captureReferenceValue() {
+	}
+
+	/**
 	 * Return the originally parsed prelude as a {@link RawSourceFragment}
 	 * 
 	 * @return

@@ -164,4 +164,11 @@ public class SequentialContents<N, T> extends PrettyPrintableContents<N, T> {
 		}
 	}
 
+	@Override
+	public void captureReferenceValue() {
+		for (PrettyPrintableContents<N, T> contents : getPPContents()) {
+			contents.captureReferenceValue();
+		}
+	}
+
 }

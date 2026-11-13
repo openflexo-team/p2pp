@@ -292,4 +292,14 @@ public class ConditionalContents<N, T> extends PrettyPrintableContents<N, T> {
 		}
 	}
 
+	@Override
+	public void captureReferenceValue() {
+		if (getThenContents() != null) {
+			getThenContents().captureReferenceValue();
+		}
+		if (getElseContents() != null) {
+			getElseContents().captureReferenceValue();
+		}
+	}
+
 }

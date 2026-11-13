@@ -17,6 +17,22 @@ public interface PrettyPrintContext {
 	 */
 	public PrettyPrintContext derive(Indentation indentation);
 
+	/**
+	 * Tells whether this context is the one of the preserving pretty-print ({@link P2PPNode#getTextualRepresentation(PrettyPrintContext)}),
+	 * where a contents written in its normalized form (an object created by a model change) still writes its values as they were written
+	 * ({@link DynamicContents#derivedWith(java.util.function.Supplier)}), rather than the normalized pretty-print of a whole text
+	 */
+	public default boolean isPreservingParsedText() {
+		return false;
+	}
+
+	/**
+	 * This context, for the preserving pretty-print (see {@link #isPreservingParsedText()})
+	 */
+	public default PrettyPrintContext preservingParsedText() {
+		return this;
+	}
+
 	public Indentation getIndentation();
 
 	public String getResultingIndentation();

@@ -38,6 +38,7 @@
 
 package org.openflexo.p2pp;
 
+import java.util.Objects;
 import java.util.function.Supplier;
 
 import org.openflexo.p2pp.RawSource.RawSourceFragment;
@@ -57,6 +58,14 @@ public class DynamicContents<N, T> extends PrettyPrintableContents<N, T> {
 
 	private final Supplier<String> stringRepresentationSupplier;
 
+	// P2PP-F-2: when set, the parsed text is kept while the value is the one captured once the model was fully built
+	private boolean keepsParsedTextWhileUnchanged = false;
+	// P2PP-F-2: the text written by the preserving pretty-print when it differs from the normalized one (a value made of parts that keep
+	// their own parsed text)
+	private Supplier<String> derivedValueSupplier;
+	private boolean referenceValueCaptured = false;
+	private String referenceValue;
+
 	/**
 	 * Build a new {@link DynamicContents}, whose value is intented to replace text determined with supplied fragment
 	 * 
@@ -75,7 +84,9 @@ public class DynamicContents<N, T> extends PrettyPrintableContents<N, T> {
 	@Override
 	public String getNormalizedPrettyPrint(PrettyPrintContext context) {
 		StringBuffer sb = new StringBuffer();
-		String dynamicValue = stringRepresentationSupplier.get();
+		// Written in its normalized form inside the preserving pretty-print (an object created by a model change): its value as written
+		String dynamicValue = context != null && context.isPreservingParsedText() && derivedValueSupplier != null ? derivedValueSupplier.get()
+				: stringRepresentationSupplier.get();
 		if (StringUtils.isNotEmpty(dynamicValue)) {
 			if (StringUtils.isNotEmpty(getPrelude())) {
 				sb.append(getPrelude());
@@ -97,12 +108,70 @@ public class DynamicContents<N, T> extends PrettyPrintableContents<N, T> {
 		derivedRawSource.replace(getFragment(), stringRepresentationSupplier.get());
 	}*/
 
+	/**
+	 * Keep the parsed text of this contents as long as its value is the one it had when the model was built (see
+	 * {@link #captureReferenceValue()}), instead of writing the value again at each pretty-print.<br>
+	 * To be used when the value is a normalized form of the text (an expression, a qualified name, a literal): {@code 1+2} keeps being
+	 * written {@code 1+2}, not {@code 1 + 2}, until the value changes. Without a captured reference value, the value is written as
+	 * before.
+	 * 
+	 * @return this contents
+	 */
+	public DynamicContents<N, T> keepingParsedTextWhileUnchanged() {
+		keepsParsedTextWhileUnchanged = true;
+		return this;
+	}
+
+	/**
+	 * The text the preserving pretty-print writes when the parsed text cannot be kept, if it is not the normalized value: a value made of
+	 * parts that keep their own parsed text (the items of a list, the operands of an expression). It is also written when this contents
+	 * is written in its normalized form inside the preserving pretty-print (an object created by a model change, see
+	 * {@link PrettyPrintContext#isPreservingParsedText()}). The normalized pretty-print of a whole text, and the comparison with the
+	 * reference value, still use the normalized value.
+	 * 
+	 * @return this contents
+	 */
+	public DynamicContents<N, T> derivedWith(Supplier<String> derivedValueSupplier) {
+		this.derivedValueSupplier = derivedValueSupplier;
+		return this;
+	}
+
+	public boolean keepsParsedTextWhileUnchanged() {
+		return keepsParsedTextWhileUnchanged;
+	}
+
+	/**
+	 * Record the current value as the one the parsed text stands for. Called once the model built from the source is complete (references
+	 * resolved), before any edit: see {@link P2PPNode#captureReferenceValues()}
+	 */
+	@Override
+	public void captureReferenceValue() {
+		if (keepsParsedTextWhileUnchanged) {
+			referenceValue = stringRepresentationSupplier.get();
+			referenceValueCaptured = true;
+		}
+	}
+
+	/**
+	 * Tells whether the parsed text of this contents still stands for its value: it was parsed, and its value is the captured reference
+	 * value
+	 */
+	public boolean isParsedTextUpToDate() {
+		return keepsParsedTextWhileUnchanged && referenceValueCaptured && getFragment() != null
+				&& Objects.equals(stringRepresentationSupplier.get(), referenceValue);
+	}
+
 	@Override
 	public void updatePrettyPrint(DerivedRawSource derivedRawSource, PrettyPrintContext context) {
 
 		super.updatePrettyPrint(derivedRawSource, context);
 
-		String replacedString = stringRepresentationSupplier.get();
+		if (isParsedTextUpToDate()) {
+			// The value did not change since it was parsed: the text of the source is kept as it was written
+			return;
+		}
+
+		String replacedString = derivedValueSupplier != null ? derivedValueSupplier.get() : stringRepresentationSupplier.get();
 		if (replacedString == null) {
 			// A null value is an empty one (it must not be written as "null")
 			replacedString = "";

@@ -57,6 +57,7 @@ public class DefaultPrettyPrintContext implements PrettyPrintContext {
 
 	private Indentation indentation;
 	private String resultingIndentation = null;
+	private boolean preservingParsedText = false;
 
 	private static final String INDENTATION = "\t";
 	// private static final String INDENTATION = "A";
@@ -76,7 +77,24 @@ public class DefaultPrettyPrintContext implements PrettyPrintContext {
 	 */
 	@Override
 	public PrettyPrintContext derive(Indentation indentation) {
-		return new DefaultPrettyPrintContext(indentation);
+		DefaultPrettyPrintContext returned = new DefaultPrettyPrintContext(indentation);
+		returned.preservingParsedText = preservingParsedText;
+		return returned;
+	}
+
+	@Override
+	public boolean isPreservingParsedText() {
+		return preservingParsedText;
+	}
+
+	@Override
+	public PrettyPrintContext preservingParsedText() {
+		if (preservingParsedText) {
+			return this;
+		}
+		DefaultPrettyPrintContext returned = new DefaultPrettyPrintContext(indentation);
+		returned.preservingParsedText = true;
+		return returned;
 	}
 
 	@Override

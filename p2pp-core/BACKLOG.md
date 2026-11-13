@@ -49,3 +49,25 @@ text is parsed into a unit of its own, the model is not touched; a text that doe
   rows are left as they are (pinned by `TestFMLReindentCases`). The arguments of a role or a behaviour (`with ShapeRole(a=…,⏎b=…)`) are
   separate tokens and are aligned.
 - The editor action was compiled (javac and ECJ) but not run in the application.
+
+## P2PP-F-2 — Keep the parsed text of a value while it does not change — DONE
+
+**Problem.** A `DynamicContents` replaces its fragment with the value of its supplier at each pretty-print: it cannot know whether the value
+changed. When the value is a normalized form of the text (an expression, a qualified name, a literal), an untouched source is rewritten
+(`1+2` becomes `1 + 2` in FML, CORE-D-33 of openflexo-core).
+
+**Approach.** `dynamicContents(...).keepingParsedTextWhileUnchanged()`: the contents keeps its parsed fragment as long as its value equals
+a reference value, captured by `P2PPNode.captureReferenceValues()` (recursively over the contents and the children), which the language
+calls once the model built from the source is complete and before any edit. A value that changes is written; changed back, the parsed text
+is kept again. Without a captured value the contents behaves as before. Decided with the user: the reference is captured after the model is
+built (the FML parser prepares the pretty-print before resolving references, too early). Captured once, not again when a referenced unit
+completes later: a later capture could take an edit for the parsed text.
+
+`derivedWith(supplier)`: the text the preserving pretty-print writes when it is not the normalized value (a value made of parts that
+keep their own text, the binding of FML written through its nodes). It is also written by a contents written in its normalized form
+inside the preserving pretty-print (an object created by a model change): `P2PPNode.getTextualRepresentation` marks its context
+(`PrettyPrintContext.isPreservingParsedText()`), and `derive()` passes the mark on. The normalized pretty-print of a whole text, and the
+comparison with the reference value, use the normalized value.
+
+**Acceptance.** `TestKeepParsedTextWhileUnchanged` (p2pp-test); the FML invariants of openflexo-core (CORE-D-33).
+

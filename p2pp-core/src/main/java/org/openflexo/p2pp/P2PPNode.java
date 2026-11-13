@@ -283,6 +283,21 @@ public abstract class P2PPNode<N, T> {
 	}
 
 	/**
+	 * Record, in this node and recursively in its children, the values that the contents keeping their parsed text while unchanged stand
+	 * for (see {@link DynamicContents#keepingParsedTextWhileUnchanged()}, P2PP-F-2).<br>
+	 * To be called once the model built from the source is complete (its references resolved), and before any edit: a value that differs
+	 * later from the one captured here is written again, otherwise the parsed text is kept.
+	 */
+	public void captureReferenceValues() {
+		for (PrettyPrintableContents<N, T> contents : new ArrayList<>(ppContents)) {
+			contents.captureReferenceValue();
+		}
+		for (P2PPNode<?, ?> child : new ArrayList<>(getChildren())) {
+			child.captureReferenceValues();
+		}
+	}
+
+	/**
 	 * Return normalized textual representation for this node
 	 * 
 	 * @param context
@@ -912,6 +927,9 @@ public abstract class P2PPNode<N, T> {
 	 */
 	public String getTextualRepresentation(PrettyPrintContext context) {
 		// TODO: implement a cache !!!!
+
+		// The preserving pretty-print: what is written in its normalized form keeps the values as they were written (P2PP-F-2)
+		context = context.preservingParsedText();
 
 		if (getASTNode() == null) {
 			return getNormalizedTextualRepresentation(context);
