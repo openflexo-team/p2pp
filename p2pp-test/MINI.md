@@ -111,6 +111,11 @@ unit U {
 --- expect-normalized                (optional)
 ```
 
+A scenario can have several **steps**, applied to the SAME document one after the other: an `--- edit` block that comes after an `--- expect`
+one starts the next step, with its own `--- expect` (and `--- expect-normalized`). The first step may have no edit. The derived text must be the
+expected one after each step, as a test that edits a model and prints it several times (`steps.p2pt`). Texts are compared without their final
+line separators and as `PrettyPrintTarget.sameText()` says.
+
 A block ends at the next `---` or `===` row; its trailing blank rows and final line separator are not part of it. Edits are applied in
 order, to the model only, then the document is pretty-printed once. They are written with names as they are at that moment (after
 `rename A to Z`, the concept is `Z`).

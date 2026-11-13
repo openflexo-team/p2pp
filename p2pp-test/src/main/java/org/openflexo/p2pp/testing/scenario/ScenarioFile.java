@@ -55,9 +55,13 @@ public final class ScenarioFile {
 			}
 		}
 		for (Scenario s : returned) {
-			if (s.source == null || s.expect == null) {
+			boolean complete = s.source != null && !s.steps.isEmpty();
+			for (Scenario.Step step : s.steps) {
+				complete &= step.expect != null;
+			}
+			if (!complete) {
 				throw new IllegalArgumentException(file.getName() + ":" + s.getLine() + ": scenario '" + s.getTitle()
-						+ "' needs a source block and an expect block");
+						+ "' needs a source block, and an expect block for each of its steps");
 			}
 		}
 		return returned;
@@ -67,10 +71,11 @@ public final class ScenarioFile {
 		// blockLine is the row of the block header: the row k of the block is at blockLine + 1 + k
 		switch (block) {
 			case "edit":
+				Scenario.Step step = openStep(scenario, true);
 				for (int k = 0; k < rows.size(); k++) {
 					String command = rows.get(k).trim();
 					if (!command.isEmpty() && !command.startsWith("#")) {
-						scenario.edits.add(new Scenario.Edit(command, blockLine + 1 + k));
+						step.edits.add(new Scenario.Edit(command, blockLine + 1 + k));
 					}
 				}
 				break;
@@ -78,14 +83,22 @@ public final class ScenarioFile {
 				scenario.source = text(rows);
 				break;
 			case "expect":
-				scenario.expect = text(rows);
+				openStep(scenario, false).expect = text(rows);
 				break;
 			case "expect-normalized":
-				scenario.expectNormalized = text(rows);
+				openStep(scenario, false).expectNormalized = text(rows);
 				break;
 			default:
 				throw new IllegalArgumentException(scenario.getFile() + ":" + blockLine + ": unknown block '" + block + "'");
 		}
+	}
+
+	/** The step that the next block belongs to: a new one when the last one has its expectations and an edit comes */
+	private static Scenario.Step openStep(Scenario scenario, boolean forEdit) {
+		if (scenario.steps.isEmpty() || (forEdit && scenario.steps.get(scenario.steps.size() - 1).isClosed())) {
+			scenario.steps.add(new Scenario.Step());
+		}
+		return scenario.steps.get(scenario.steps.size() - 1);
 	}
 
 	private static String text(List<String> rows) {

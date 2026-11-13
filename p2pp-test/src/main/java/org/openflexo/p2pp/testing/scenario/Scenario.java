@@ -4,7 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * One scenario of a {@code .p2pt} file: a source, edits applied to its model, and the pretty-print expected afterwards.
+ * One scenario of a {@code .p2pt} file: a source, then one or several steps, each made of edits applied to the model of the SAME document
+ * and of the pretty-print expected afterwards.
  * <p>
  * File format (rows outside a block, before the first {@code ===}, are comments):
  *
@@ -19,9 +20,14 @@ import java.util.List;
  * text of the derived pretty-print
  * --- expect-normalized           (optional)
  * text of the normalized pretty-print
+ * --- edit                        (a next step: edits applied to the document as it is, then its expectations)
+ * ...
+ * --- expect
+ * ...
  * </pre>
  *
- * A block ends at the next {@code ---} or {@code ===} row; its trailing blank rows and its final line separator are not part of it.
+ * An {@code edit} block that comes after an {@code expect} one starts a new step; the first step may have no edit (a source that is only
+ * pretty-printed). A block ends at the next {@code ---} or {@code ===} row; its trailing blank rows and its final line separator are not part of it.
  */
 public final class Scenario {
 
@@ -36,14 +42,35 @@ public final class Scenario {
 		}
 	}
 
+	/** Edits applied to the document, then what its pretty-prints must be */
+	public static final class Step {
+		final List<Edit> edits = new ArrayList<>();
+		String expect;
+		String expectNormalized;
+
+		public List<Edit> getEdits() {
+			return edits;
+		}
+
+		public String getExpect() {
+			return expect;
+		}
+
+		public String getExpectNormalized() {
+			return expectNormalized;
+		}
+
+		boolean isClosed() {
+			return expect != null || expectNormalized != null;
+		}
+	}
+
 	private final String file;
 	private final int line;
 	private final String title;
 	String knownDefect;
 	String source;
-	String expect;
-	String expectNormalized;
-	final List<Edit> edits = new ArrayList<>();
+	final List<Step> steps = new ArrayList<>();
 
 	Scenario(String file, int line, String title) {
 		this.file = file;
@@ -72,16 +99,8 @@ public final class Scenario {
 		return source;
 	}
 
-	public List<Edit> getEdits() {
-		return edits;
-	}
-
-	public String getExpect() {
-		return expect;
-	}
-
-	public String getExpectNormalized() {
-		return expectNormalized;
+	public List<Step> getSteps() {
+		return steps;
 	}
 
 	@Override

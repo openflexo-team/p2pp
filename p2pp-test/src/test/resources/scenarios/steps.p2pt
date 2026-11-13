@@ -1,0 +1,53 @@
+# Steps: edits applied one after the other to the SAME document, each followed by its own expectations.
+
+=== two steps on one document
+--- source
+unit U {
+	concept A {
+		field x : int;
+	}
+}
+--- edit
+set abstract A true
+--- expect
+unit U {
+	abstract concept A {
+		field x : int;
+	}
+}
+--- edit
+rename A to B
+add field B y : int
+--- expect
+unit U {
+	abstract concept B {
+		field x : int;
+		field y : int;
+	}
+}
+
+=== a step without edit, then an edit, then the edit undone
+--- source
+unit U {
+	concept A {
+	}
+}
+--- expect
+unit U {
+	concept A {
+	}
+}
+--- edit
+set parent A B
+--- expect
+unit U {
+	concept A extends B {
+	}
+}
+--- edit
+set parent A none
+--- expect
+unit U {
+	concept A {
+	}
+}
