@@ -10,7 +10,8 @@ import org.openflexo.p2pp.testing.PrettyPrintTarget.Document;
  * The invariants checked on every {@link EditCase}. None needs an expected text: they hold whatever the edit.
  * <ul>
  * <li><b>parse-back</b>: the derived text parses back to the edited model;</li>
- * <li><b>stable</b>: that text, parsed and pretty-printed again with no edit, does not change;</li>
+ * <li><b>stable</b>: that text, parsed and pretty-printed again with no edit, does not change (as {@link PrettyPrintTarget#sameText} says,
+ * like the other comparisons of texts below);</li>
  * <li><b>layout</b>: for a source that is itself laid out canonically ({@link PrettyPrintTarget#layoutViolation}), the derived text still
  * is: a new or a remaining row is indented like its siblings, and no separator is left behind;</li>
  * <li><b>comments</b>: no comment of the source ({@link PrettyPrintTarget#comments}) is lost, except by a removal, which may take the
@@ -46,7 +47,7 @@ public final class EditCaseChecker {
 			if (!reparsed.dump().equals(edited)) {
 				failures.add("parse-back: the text means another model\n" + derived);
 			}
-			else if (!reparsed.derived().equals(derived)) {
+			else if (!target.sameText(derived, reparsed.derived())) {
 				failures.add("stable: pretty-printed again, the text changes\n" + derived);
 			}
 		} catch (Exception e) {
@@ -74,12 +75,12 @@ public final class EditCaseChecker {
 			apply(fresh, c.edits, c);
 			apply(fresh, c.inverse, c);
 			String undone = fresh.derived();
-			if (!undone.equals(untouched)) {
+			if (!target.sameText(untouched, undone)) {
 				failures.add("undo: the edit and its inverse do not give the source back\n" + undone);
 			}
 			apply(doc, c.inverse, c);
 			String undoneAfterPrint = doc.derived();
-			if (!undoneAfterPrint.equals(untouched)) {
+			if (!target.sameText(untouched, undoneAfterPrint)) {
 				failures.add("undo-after-print: pretty-printing in between changes the result\n" + undoneAfterPrint);
 			}
 		}
